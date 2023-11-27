@@ -28,8 +28,6 @@ const CommitmentsTable: React.FC = () => {
             <TableCell>Promise</TableCell>
             <TableCell>Party</TableCell>
             <TableCell>Status</TableCell>
-            <TableCell>Tags</TableCell>
-            <TableCell>Metadata</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -39,8 +37,6 @@ const CommitmentsTable: React.FC = () => {
               <TableCell>{commitment.Promise}</TableCell>
               <TableCell>{commitment.Party}</TableCell>
               <TableCell>{commitment.Status}</TableCell>
-              <TableCell>{commitment.Tags}</TableCell>
-              <TableCell>{commitment.Metadata}</TableCell>
             </TableRow>
           ))}
         </TableBody>
