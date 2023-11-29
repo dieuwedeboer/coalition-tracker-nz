@@ -1,8 +1,11 @@
 export type CommitmentRecord = {
   Category: string;
-  Promise: string;
+  Commitment: string;
   Party: string;
-  Status: number | '-1'; // -1 for failed
+  Status: number | bool;
   Tags: string[];
+  LobbyFor: string;
+  LobbyAgainst: string;
+  Notes: string;
   Metadata: string;
 };

@@ -1,42 +1,45 @@
-import React, { useEffect, useState } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
-import { CommitmentRecord } from '../types';
-import { fetchCommitmentData } from '../services/csvDataService';
+import React from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper
+} from '@mui/material';
 
-const CommitmentsTable: React.FC = () => {
-  const [commitments, setCommitments] = useState<CommitmentRecord[]>([]);
+const CommitmentsTable = ({ data }) => {
+  const styleTableContainer = {
+    overflowX: 'initial',
+  }
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchCommitmentData();
-        setCommitments(data);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    loadData();
-  }, []);
+  const styleTableHead = {
+    '.MuiTableCell-head': {
+      fontWeight: 'bold',
+    }
+  }
 
   return (
-    <TableContainer component={Paper}>
-      <Table aria-label="commitments table">
-        <TableHead>
+    <TableContainer component={Paper} sx={styleTableContainer}>
+      <Table stickyHeader aria-label="sticky table">
+        <TableHead sx={styleTableHead}>
           <TableRow>
             <TableCell>Category</TableCell>
-            <TableCell>Promise</TableCell>
+            <TableCell>Commitment</TableCell>
             <TableCell>Party</TableCell>
             <TableCell>Status</TableCell>
+            <TableCell>Lobby For</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {commitments.map((commitment, index) => (
+          {data.map((record, index) => (
             <TableRow key={index}>
-              <TableCell>{commitment.Category}</TableCell>
-              <TableCell>{commitment.Promise}</TableCell>
-              <TableCell>{commitment.Party}</TableCell>
-              <TableCell>{commitment.Status}</TableCell>
+              <TableCell>{record.Category}</TableCell>
+              <TableCell>{record.Commitment}</TableCell>
+              <TableCell>{record.Party}</TableCell>
+              <TableCell>{record.Status}</TableCell>
+              <TableCell>{record.LobbyFor}</TableCell>
             </TableRow>
           ))}
         </TableBody>
