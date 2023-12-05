@@ -30,3 +30,9 @@ The spreadsheet is publicly accessible and you can add comments or message me el
 * Split rows that have multiple (or a list) of action points.
 * Include National’s pledge card, fiscal plan, tax plan, and its 100 point economic plan — without the exceptions and comprises from the NZ First and ACT agreements. Compromises or overlap are indicated by "X, National" as parties in the current dataset.
 * Add more lobby groups who have released lists of policy they want implemented (or policy they want to oppose).
+
+## Credits
+
+Much of this project was written with the help of ChatGPT since my React/Typescript skills leave much to be desired. The React and Material UI documentation are really good though and help keep things simple.
+
+The thumbnail image in the build directory uses a photo taken by Mark Mitchell from the NZ Herald of David Seymour, Christopher Luxon, and Winston Peters after the signing ceremony for the coalition agreements.
