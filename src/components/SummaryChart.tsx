@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '@mui/material/styles';
 import { Grid } from '@mui/material';
 import { BarChart } from '@mui/x-charts';
+import { blueGrey } from '@mui/material/colors';
 
 const SummaryChart = ({ data }) => {
   const theme = useTheme();
@@ -21,7 +22,7 @@ const SummaryChart = ({ data }) => {
       <BarChart
         xAxis={[
           {
-            data: ['Summary'],
+            data: ['Progress Overview'],
             scaleType: 'band',
           },
         ]}
@@ -29,21 +30,22 @@ const SummaryChart = ({ data }) => {
           {
             data: [summary.notStarted],
             label: (summary.notStarted / total * 100).toFixed() + '% Not Started',
-          },
-          {
-            data: [summary.delivered],
-            label: (summary.delivered / total * 100).toFixed() + '% Delivered',
-            color: theme.palette.success.main
+            color: blueGrey[600]
           },
           {
             data: [summary.inProgress],
             label: (summary.inProgress / total * 100).toFixed() + '% In Progress',
-            color: theme.palette.warning.light
+            color: theme.palette.info.dark
+          },
+          {
+            data: [summary.delivered],
+            label: (summary.delivered / total * 100).toFixed() + '% Delivered',
+            color: theme.palette.success.dark
           },
           {
             data: [summary.failed],
             label: (summary.failed / total * 100).toFixed() + '% Failed',
-            color: theme.palette.error.main
+            color: theme.palette.error.dark
           }
         ]}
       />
