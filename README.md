@@ -3,7 +3,7 @@ Coalition Government Promise Tracker 2023-2026 between National, ACT, and NZ Fir
 
 The goal of this project is to give an easy-to-use and informative progress report on the Coalition Government. Individuals and groups should be able to use this tool to determine where to apply pressure on the government on specific issues of interest to them.
 
-The hope is to maintain this tool through to the 2025 election with regular updates to the data so that it can be used to inform and influence voters.
+The hope is to maintain this tool through to the next election with regular updates to the data so that it can be used to inform and influence voters.
 
 This project will require some deliberate bias in how the data is presented and judged. Decisions will be made from the perspective of those who want the government to succeed on its right-wing policy commitments.
 
