@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '@mui/material/styles';
 import { Grid } from '@mui/material';
-import { BarChart } from '@mui/x-charts';
+import { PieChart, BarChart } from '@mui/x-charts';
 import { blueGrey } from '@mui/material/colors';
 
 const SummaryChart = ({ data }) => {
@@ -17,37 +17,49 @@ const SummaryChart = ({ data }) => {
     return acc;
   }, { notStarted: 0, delivered: 0, inProgress: 0, failed: 0 });
 
+  const percent = (value) => ((value / total) * 100).toFixed();
+
   return (
-    <Grid container width="100%" height={300}>
-      <BarChart
-        xAxis={[
-          {
-            data: ['Progress Overview'],
-            scaleType: 'band',
-          },
-        ]}
+    <Grid container width="100%" height={360}>
+      <PieChart
         series={[
           {
-            data: [summary.notStarted],
-            label: (summary.notStarted / total * 100).toFixed() + '% Not Started',
-            color: blueGrey[600]
+            highlightScope: { faded: 'global', highlighted: 'item' },
+            faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
+            innerRadius: 7,
+            paddingAngle: 3,
+            cornerRadius: 5,
+            data: [
+              {
+                value: summary.notStarted,
+                label: 'Not Started (' + percent(summary.notStarted) + '%)',
+                color: blueGrey[600],
+              },
+              {
+                value: summary.inProgress,
+                label: 'In Progress (' + percent(summary.inProgress) + '%)',
+                color: theme.palette.info.dark,
+              },
+              {
+                value: summary.delivered,
+                label: 'Delivered (' + percent(summary.delivered) + '%)',
+                color: theme.palette.success.dark,
+              },
+              {
+                value: summary.failed,
+                label: 'Failed (' + percent(summary.failed) + '%)',
+                color: theme.palette.error.dark,
+              },
+            ],
           },
-          {
-            data: [summary.inProgress],
-            label: (summary.inProgress / total * 100).toFixed() + '% In Progress',
-            color: theme.palette.info.dark
-          },
-          {
-            data: [summary.delivered],
-            label: (summary.delivered / total * 100).toFixed() + '% Delivered',
-            color: theme.palette.success.dark
-          },
-          {
-            data: [summary.failed],
-            label: (summary.failed / total * 100).toFixed() + '% Failed',
-            color: theme.palette.error.dark
-          }
         ]}
+        margin={{ bottom: 60 }}
+        slotProps={{
+          legend: {
+            direction: 'row',
+            position: { vertical: 'bottom', horizontal: 'middle' },
+          },
+        }}
       />
     </Grid>
   );

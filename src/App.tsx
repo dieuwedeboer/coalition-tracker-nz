@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { CssBaseline, Typography } from '@mui/material';
 import SummaryChart from './components/SummaryChart';
 import CommitmentsTable from './components/CommitmentsTable';
 import { CommitmentRecord } from './types';
@@ -37,7 +37,9 @@ const App = () => {
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <main>
-        <h1>NZ Coalition Government Commitment Tracker 2024</h1>
+        <Typography variant="h3" sx={{ m: '1rem', textAlign: 'center' }}>
+          NZ Coalition Government Commitment Tracker 2024
+        </Typography>
         <SummaryChart data={data} />
         <CommitmentsTable data={data} />
       </main>
