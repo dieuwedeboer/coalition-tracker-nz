@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '@mui/material/styles';
 import { Grid } from '@mui/material';
-import { PieChart, BarChart } from '@mui/x-charts';
+import { PieChart } from '@mui/x-charts';
 import { blueGrey } from '@mui/material/colors';
 
 const SummaryChart = ({ data }) => {
