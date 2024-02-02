@@ -27,8 +27,11 @@ The spreadsheet is publicly accessible and you can add comments or message me el
 
 ## Todo
 * Table sorting improvements and filtering.
+* Show the date the app was last updated (and track update dates per row).
 * Split rows that have multiple (or a list) of action points.
 * Include National’s pledge card, fiscal plan, tax plan, and its 100 point economic plan — without the exceptions and comprises from the NZ First and ACT agreements. Compromises or overlap are indicated by "X, National" as parties in the current dataset.
+* Add some info panels and a link to my work in the app.
+* Host the app on a dedicated URL instead of my git pages.
 * Add more lobby groups who have released lists of policy they want implemented (or policy they want to oppose).
 
 ## Credits
