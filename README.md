@@ -17,7 +17,7 @@ Several lobby groups have released commitments they support and are happy with. 
 Status tracking is done as a percentage from 0-100, with a negative value indicating failure. A value of 10% is given to commitments announces as being in progress and 100% to those completed.
 
 ## Take a look
-There is a Github hosted build of the current project available: https://dieuwedeboer.github.io/coalition-tracker-nz/
+There is a Github hosted build of the current project available: https://coalitiontracker.nz
 
 ## The data
 
