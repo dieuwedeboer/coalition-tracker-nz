@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Typography } from '@mui/material';
 import SummaryChart from './components/SummaryChart';
 import CommitmentsTable from './components/CommitmentsTable';
+import Footer from './components/Footer';
 import { CommitmentRecord } from './types';
 import { fetchCommitmentData } from './services/csvDataService';
 
@@ -42,6 +43,7 @@ const App = () => {
         </Typography>
         <SummaryChart data={data} />
         <CommitmentsTable data={data} />
+        <Footer />
       </main>
     </ThemeProvider>
   );

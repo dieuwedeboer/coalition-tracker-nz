@@ -94,6 +94,7 @@ const CommitmentsTable = ({ data }) => {
                 Status
               </TableSortLabel>
             </TableCell>
+            <TableCell>Due</TableCell>
             <TableCell>Tags</TableCell>
             <TableCell>Lobby For</TableCell>
           </TableRow>
@@ -117,6 +118,7 @@ const CommitmentsTable = ({ data }) => {
               </TableCell>
               <TableCell>{record.Party}</TableCell>
               <TableCell>{record.Status}%</TableCell>
+              <TableCell>{record.Due}</TableCell>
               <TableCell>{record.Tags}</TableCell>
               <TableCell>{record.LobbyFor}</TableCell>
             </TableRow>

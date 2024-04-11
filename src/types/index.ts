@@ -3,6 +3,8 @@ export type CommitmentRecord = {
   Commitment: string;
   Party: string;
   Status: number | bool;
+  Updated: string;
+  Due: string;
   References: string;
   Tags: string[];
   LobbyFor: string;
