@@ -19,7 +19,25 @@ const CommitmentsTable = ({ data }) => {
   const [orderBy, setOrderBy] = useState('Status');
   const [order, setOrder] = useState('desc');
 
+  const dateSortFunction = (a, b, orderBy) => {
+
+    const dateA =  a[orderBy] ? new Date(a[orderBy].split('/').reverse().join('/')) : null;
+    const dateB =  b[orderBy] ? new Date(b[orderBy].split('/').reverse().join('/')) : null;
+
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    if (isNaN(dateA) || isNaN(dateB)) return 0;
+
+    return order === 'asc' ? dateA - dateB : dateB - dateA;
+  };
+
   const sortedData = [...data].sort((a, b) => {
+    // Date-based sorting.
+    if (orderBy === 'Due' || orderBy === 'Updated') {
+      return dateSortFunction(a, b, orderBy);
+    }
+    // Alphabetical sorting.
     const isAsc = order === 'asc';
     return (isAsc ? 1 : -1) * (a[orderBy] < b[orderBy] ? -1 : 1);
   });
@@ -94,9 +112,26 @@ const CommitmentsTable = ({ data }) => {
                 Status
               </TableSortLabel>
             </TableCell>
-            <TableCell>Due</TableCell>
+            <TableCell>
+              <TableSortLabel
+                active={orderBy === 'Updated'}
+                direction={orderBy === 'Updated' ? order : 'asc'}
+                onClick={() => handleRequestSort('Updated')}
+              >
+                Updated
+              </TableSortLabel>
+            </TableCell>
+            <TableCell>
+              <TableSortLabel
+                active={orderBy === 'Due'}
+                direction={orderBy === 'Due' ? order : 'asc'}
+                onClick={() => handleRequestSort('Due')}
+              >
+                Due
+              </TableSortLabel>
+            </TableCell>
             <TableCell>Tags</TableCell>
-            <TableCell>Lobby For</TableCell>
+            <TableCell>Lobbying For</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -118,6 +153,7 @@ const CommitmentsTable = ({ data }) => {
               </TableCell>
               <TableCell>{record.Party}</TableCell>
               <TableCell>{record.Status}%</TableCell>
+              <TableCell>{record.Updated}</TableCell>
               <TableCell>{record.Due}</TableCell>
               <TableCell>{record.Tags}</TableCell>
               <TableCell>{record.LobbyFor}</TableCell>
