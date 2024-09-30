@@ -5,7 +5,7 @@ module.exports = {
   entry: './src/index.tsx',
   output: {
     path: path.join(__dirname, '/docs'),
-    filename: 'bundle.js'
+    filename: 'bundle.js?v=' + new Date().getTime()
   },
   module: {
     rules: [
