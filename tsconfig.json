@@ -5,7 +5,9 @@
     "noImplicitAny": true,
     "module": "es6",
     "target": "es5",
-    "jsx": "react"
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node"
   },
   "include": ["./src/**/*"]
 }

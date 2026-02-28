@@ -6,8 +6,11 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.14.18",
     "@mui/x-charts": "^6.18.2",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.26.2",
     "papaparse": "^5.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -17,6 +20,9 @@
     "@babel/preset-env": "^7.23.3",
     "@babel/preset-react": "^7.23.3",
     "@babel/preset-typescript": "^7.23.3",
+    "@types/d3-scale": "^4.0.9",
+    "@types/d3-shape": "^3.1.8",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^18.2.38",
     "@types/react-dom": "^18.2.17",
     "babel-loader": "^9.1.3",
