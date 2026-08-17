@@ -70,7 +70,8 @@ const SummaryChart = ({ data, onFilter, activeFilter }: SummaryChartProps) => {
     const months: string[] = [];
     const delivered: number[] = [];
     
-    for (let d = new Date(2023, 11, 1); d <= new Date(2026, 10, 1); d.setMonth(d.getMonth() + 1)) {
+    // Coalition formed 24 Nov 2023; include that month so day-one deliveries plot.
+    for (let d = new Date(2023, 10, 1); d <= new Date(2026, 10, 1); d.setMonth(d.getMonth() + 1)) {
       months.push(d.toLocaleDateString('en-NZ', { month: 'short', year: '2-digit' }));
       delivered.push(0);
     }
@@ -81,7 +82,9 @@ const SummaryChart = ({ data, onFilter, activeFilter }: SummaryChartProps) => {
     }).forEach(item => {
       try {
         const [day, month, year] = item.Updated.split('/');
-        const date = new Date(parseInt(year) + 2000, parseInt(month) - 1, parseInt(day));
+        const yearNum = parseInt(year, 10);
+        const fullYear = yearNum < 100 ? 2000 + yearNum : yearNum;
+        const date = new Date(fullYear, parseInt(month, 10) - 1, parseInt(day, 10));
         const monthKey = date.toLocaleDateString('en-NZ', { month: 'short', year: '2-digit' });
         const idx = months.indexOf(monthKey);
         if (idx >= 0) {
