@@ -15,6 +15,7 @@ import {
   AccessTime,
 } from '@mui/icons-material';
 import { formatDistanceToNow, parseISO } from 'date-fns';
+import ElectionRibbon from './components/ElectionRibbon';
 import Header from './components/Header';
 import SummaryChart from './components/SummaryChart';
 import CommitmentsTable from './components/CommitmentsTable';
@@ -105,6 +106,7 @@ const App = () => {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <ElectionRibbon />
         <Header mode={mode} onToggleTheme={() => setMode(mode === 'light' ? 'dark' : 'light')} />
         <LoadingSpinner />
       </ThemeProvider>
@@ -114,6 +116,7 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ElectionRibbon />
       <Header mode={mode} onToggleTheme={() => setMode(mode === 'light' ? 'dark' : 'light')} />
       <PageTransition in>
         <Box
