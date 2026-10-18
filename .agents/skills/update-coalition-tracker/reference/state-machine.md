@@ -1,58 +1,56 @@
 # State Machine
 
-The Status field on each commitment is an editorial score. The skill uses this state machine to pick a defensible value.
+The Status field on each commitment is an editorial score. This file sets out how to pick a value you can defend.
 
 ## Values
 
 | Value | Name | Meaning |
 |---|---|---|
-| `""` or `0` | Not Started | No public action tied to this commitment. |
-| `10` | In Progress (default anchor) | First public action: bill introduced, programme launched, policy paper published, budget allocated, consultation opened. |
-| `20`–`90` | Intermediate Progress | 10-multiples. The AI must be able to defend the value (e.g., "bill passed second reading, third reading scheduled for Q4" = `50`–`75`). |
-| `25`, `33`, `67`, `75` | k-fractions | Used when the commitment has a clear k-step structure. Example: a 3-phase rollout with 1 phase complete = `33`. |
-| `100` | Delivered | The 100% picture is now true. |
-| `-100` | Failed | Explicitly dropped, replaced, or expired past `Due` with no action. Requires a source. |
+| empty or `0` | Not Started | No public action tied to this commitment. |
+| `10` | In Progress (default anchor) | First concrete advance: bill introduced, programme launched, policy paper published, budget allocated, consultation opened, review commissioned. |
+| `20`–`90` | Intermediate progress | Multiples of 10. You must be able to explain the value. For example, a bill reported back from select committee and awaiting second reading is about `50`. |
+| `25`, `33`, `67`, `75` | k-fractions | Used when the commitment splits clearly into k parts. For example, a 3-limb commitment with one limb delivered is `33`. |
+| `100` | Delivered | The 100% picture is true now. |
+| `-100` | Failed | See *Failure definition*. Needs a source. |
 
-## Variance rules
+Rules:
+- `10` is the default when a commitment is in progress. Use a higher value only when you can explain why, and put that explanation in the report's reasoning and, briefly, in `Notes`.
+- k-fractions are worked out fresh on each run. Don't store the breakdown anywhere.
+- Decimals are not allowed. The only negative value allowed is `-100`. If a commitment has been partly abandoned, give it a positive fraction for the parts still delivered.
 
-- The default anchor for "in progress" is `10`. Use it unless the AI can defend a more specific value.
-- 10-multiples (`20`–`90`) are allowed when the AI can articulate why. The justification goes in `Notes`.
-- k-fractions (`25`, `33`, `67`, `75`) are allowed when the commitment has a clear k-step structure. The decomposition is dynamic — the AI does not persist it.
-- Decimal values are not allowed.
-- Negative values other than `-100` are not allowed. Partial abandonment is expressed as a positive fraction, not a negative score.
+## What 100% means: read the verb
 
-## Work backwards from 100%
+Before you look at the evidence, write down what 100% means for this particular commitment. The commitment's verb usually decides it:
 
-For each commitment, the AI should first answer: **what would 100% look like for *this specific* commitment?**
-
-- For a bill commitment ("Pass the Regulatory Standards Act"), 100% is Royal Assent.
-- For a policy commitment ("Cut health waiting times"), 100% is the policy fully implemented and the targets met.
-- For a repeal commitment ("Abolish the Māori Health Authority"), 100% is the authority abolished.
-- For a continuous commitment ("Reduce inflation"), 100% is the target reached and sustained.
-
-The AI then picks the state by reading the evidence against this 100% picture. This is why per-commitment typing is not required: the AI infers what 100% means from the commitment's text.
+| Commitment verb | 100% means |
+|---|---|
+| Investigate / review / take advice on / assess | The investigation, advice or assessment has been completed and published, or its completion has been publicly confirmed, for example through an OIA response, a Cabinet paper, or an answer to a written parliamentary question. A policy change does not have to follow. |
+| Introduce a bill / support to select committee / pass first reading | That procedural stage has been completed. What happens to the bill after that does not count. |
+| Pass / enact / amend an Act / repeal an Act | The amending or repealing Act is **in force**. Royal Assent alone is not enough if commencement comes later. |
+| Establish / fund / launch a programme | The programme is operating, for example open to applications or accepting clients. Being funded in a Budget is not enough. |
+| Numeric target ("500 new police", "13 RONS") | The number has been reached, according to the agency's own figures or official statistics. |
+| Maintain / keep / not progress / not proceed with | Nothing has changed, so the commitment is met. It counts as `100` from the date the Government took office (27/11/2023) or the date of the coalition agreement, unless the Government reverses course. |
+| Continuous outcome ("lower inflation", "reduce waiting times") | The stated target has been reached and held, according to official data. Score progress in proportion to how close the measures are to the target. |
 
 ## Failure definition
 
-A commitment is **failed** (`Status = -100`) when:
+A commitment has **failed** (`-100`) only when one of these is documented by a source:
 
-- The deliverable is no longer being pursued.
-- The commitment was explicitly dropped.
-- The commitment was replaced with an opposite policy.
-- The `Due` date has passed with no public action AND the deliverable is clearly binary (e.g., "repeal X by date Y").
+- The Government, or a minister speaking officially, said the commitment has been dropped, or will not be delivered at all.
+- A binary deliverable was replaced by the opposite policy. For example, a promise to repeal X ended with X being kept and extended.
+- A one-off, time-bound deliverable can no longer happen. For example, a referendum that had to be held at a particular election was not held.
 
-A commitment is **not** failed (`Status = 0` or a positive fraction) when:
+A commitment has **not** failed when:
 
-- The deliverable is continuous and *some* progress has been made (e.g., "reform X" with 30% implementation = `30`).
-- The commitment is binary but has been quietly wound back (use a positive fraction if some sub-deliverables still exist; otherwise `-100`).
-- The AI cannot find evidence either way (default to the current Status; surface a `Note:` for human review).
+- It has been delayed, including "next term". Keep the current Status and add a report note.
+- It was replaced by legislation or a programme that delivers the same aim. Score it as progress toward the commitment.
+- Some parts have been delivered. Use a positive fraction.
+- You can't find evidence either way. Keep the current Status and add a report note.
 
-A `-100` row must cite a source in `References` documenting the failure or abandonment. Without a source, the AI does not propose `-100` — it surfaces a `Note:` instead.
+## Past-due rows
 
-## Past-due 0-rows
+When a row's Status is empty or `0`, its `Due` date has passed, and you find no public action:
 
-When a row's `Status` is `""`/`0` and its `Due` date is in the past:
-
-- The AI does not auto-flip to `-100`.
-- The AI surfaces a `Note:` in the report: "Row N: due YYYY-MM-DD, no public action found; candidate for -100."
-- The user reviews the note and decides whether to flip in a follow-up run (or in the CSV directly).
+- Do not set the Status to `-100`.
+- Add a report note: "Due DD/MM/YYYY has passed; no public action found; candidate for -100."
+- The user decides whether to change it.

@@ -3,8 +3,8 @@ name: update-coalition-tracker
 description: |
   Update the coalition commitment tracker with the latest publicly available
   evidence. Use this skill when the user wants to research the current status
-  of coalition commitments, refresh the canonical CSV, or run the periodic
-  research loop.
+  of coalition commitments, refresh the canonical CSV, re-check delivered
+  commitments, or run the periodic research loop.
 ---
 
 # update-coalition-tracker
@@ -17,101 +17,130 @@ Invoke this skill when the user asks to:
 - "Run the research loop"
 - "Research the current status of commitments"
 - "Refresh the data"
+- "Re-check the delivered commitments" (full re-check mode)
 - Or any equivalent request to bring the canonical CSV in line with current public evidence.
 
-The user is the final reviewer. This skill proposes changes; the user commits.
+The user is the final reviewer. This skill edits the CSV and writes a report; the user reviews the diff and commits.
 
 ## Inputs
 
-- `src/data/data.csv` — the canonical commitments dataset. Read this first.
-- The current date — used for the `Updated` field on changed rows and the markdown report filename.
-- The user's intent — full run, party filter, single-row check, etc. Infer from the request.
+- `src/data/data.csv`: the canonical commitments dataset (ADR 0001). Read this first.
+- `CONTEXT.md`: the domain glossary. Use its terms in the report.
+- The current date: used for the report filename and the "as at" date in `Notes`. It is **not** written to `Updated` (ADR 0002).
+- The user's intent, inferred from the request. Choose a mode:
+  - **Standard** (default): research every row whose Status is not `100` or `-100`.
+  - **Full re-check**: research every row, including `100` and `-100`. Use when the user asks to re-check delivered or failed commitments, or when the last full re-check was more than 6 months ago (ask first in that case).
+  - **Filtered**: a party, category, or single row named by the user.
+
+## Row numbering
+
+"Row N" means the N-th data row of the CSV, counting from 1 and excluding the header. So Row 1 is CSV line 2. Row numbers change when rows are added or reordered, so every reference to a row in a report must also quote the start of the commitment text.
 
 ## Procedure
 
-1. Read `src/data/data.csv`. Parse each row.
-2. Read `.agent/skills/update-coalition-tracker/state.json` (if it exists) to determine whether this is a fresh run or a resume. See the *Resume* section.
-3. Hash the CSV. Store in `state.json` (or compare to existing `state.json`).
-4. For each row from the resume point (or row 1 if fresh):
-   - If `Status` is `100` or `-100`, skip. Increment the `100` or `-100` exclusion count.
-   - Otherwise, run per-row research (see below).
-5. After all eligible rows are processed, write the markdown report to `docs/research-runs/YYYY-MM-DD.md` and delete `state.json`.
+1. Read `src/data/data.csv` and parse it with a real CSV parser. Quoted fields contain commas.
+2. Read `.agents/skills/update-coalition-tracker/state.json` if it exists. See *Resume*.
+3. Hash the CSV and store the hash in `state.json`, or compare it with the stored hash.
+4. Select the eligible rows for the mode. In standard mode, count rows at `100` and `-100` as excluded without researching them.
+5. Research the eligible rows in batches. See *Batching*.
+6. Apply each batch's changes to the CSV and atomically write `state.json`.
+7. When every eligible row has been processed:
+   - Run `node .agents/skills/update-coalition-tracker/scripts/validate.mjs` and fix every error it reports.
+   - Run `npm run build` and confirm it succeeds.
+   - Write the report to `docs/research-runs/YYYY-MM-DD.md` (see `reference/output-format.md`).
+   - Delete `state.json`.
 
 ## Per-row protocol
 
-For each eligible row:
+1. **Anchor on the current `Status`.** It is the result of earlier runs and human review. You may disagree with it, but you must justify any change.
+2. **Define 100% for this commitment.** Read the commitment's exact wording, including its verb ("investigate", "take advice on", "introduce", "support to select committee", "repeal", "maintain"). The verb decides what full delivery looks like. See `reference/state-machine.md`.
+3. **Research.** Follow `reference/source-tiers.md`: start with the primary-record searches. If there is no press release or bill, escalate to implementation evidence. The budget is set out in *Search budget*.
+4. **Decide the Status** using `reference/state-machine.md`.
+5. **Set `Updated`** to the date of the event that justifies the Status (ADR 0002):
+   - `100`: the date the commitment was delivered. That means in force, operational, or open to the public, not the date it was announced or legislated.
+   - `-100`: the date the failure became public.
+   - In progress: the date of the latest concrete advance cited in `References`.
+   - `0`/empty: leave unchanged.
+   - Use `DD/MM/YYYY` format. Never write ISO dates into the CSV, because the app parses `DD/MM/YYYY`.
+   - If the Status is unchanged but the existing `Updated` is not the date of the event (for example, an earlier research-run date or the 27/11/2023 bulk-import date), correct it. Report the correction under *Date corrections*.
+6. **Set `References`** to the single URL that best supports the current Status. It is required for any Status above 0 and for `-100`. Prefer a primary record over news coverage (see the tiers).
+7. **Rewrite `Notes`** as a current-state summary of no more than 600 characters. Put the newest evidence first and start with "As at DD/MM/YYYY:". Replace stale figures; don't append to them. Keep earlier context only where it explains the Status. Leave `Notes` unchanged if nothing changed for the row.
+8. **Leave the row alone and add a report note instead** when the evidence is ambiguous, two primary records conflict, or the budget runs out. See *Edge cases*.
 
-1. **Anchor on the current `Status`** — it's the result of prior iteration; the AI may agree or disagree, but must justify any change in the `Notes` field.
-2. **Define "100%" for this commitment** — what would full delivery look like? Royal Assent for a bill, full implementation for a policy, the binary event for a repeal, etc. Work backwards from this when picking intermediate values.
-3. **Search authoritative sources** for evidence of progress since the `Updated` date (or since coalition formation, if `Updated` is empty). Budget: 2–3 web searches, 1–2 page reads. See `reference/source-tiers.md` for the tier rules.
-4. **Decide the new status** using the state machine in `reference/state-machine.md`:
-   - `""` (empty) or `0` — no public action tied to this commitment.
-   - `10` — first public action (bill introduced, programme launched, policy paper published, budget allocated, consultation opened).
-   - `20`–`90` in 10-multiples — intermediate progress (e.g., legislative halfway, partial implementation). The AI must be able to defend the value.
-   - `25`, `33`, `67`, `75` — k-fractions, used when the commitment has a clear k-step structure (e.g., 3 of 4 phases complete = `75`).
-   - `100` — fully delivered. The 100% picture is now true.
-   - `-100` — failed, abandoned, replaced, or expired past the `Due` date. Requires a source documenting the failure.
-5. **Edit the row in place** in `src/data/data.csv`:
-   - Update `Status` to the new value (omit if `""`).
-   - Set `Updated` to the current date (only if the row actually changed; do not bump for "no change" rows).
-   - Set `References` to the new source URL (required for any `Status > 0` and any `-100`).
-   - Append to `Notes` a 1–2 sentence summary of the change or current state.
-6. **Atomic-write `state.json`** with the new `last_processed` entry. The `commitment` field should match the current row's text exactly, so the state can be validated on resume.
-7. **Discard the row's research from your context**. Move to the next row.
+## Batching
 
-## Context management
+Process the rows in batches of about 10, giving each batch to its own subagent. This is how context is managed. Don't try to "forget" research inside one long context.
 
-The procedure must process many rows in sequence. To avoid context bloat:
-
-- After editing a row, emit a one-line summary (e.g., "Row 42: 10 → 50 — bill passed second reading 2026-06-18").
-- Do not retain search results, page content, or intermediate reasoning for prior rows.
-- If a fact is critical for a later row, encode it in the row's `Notes` field before moving on.
+- Give each subagent:
+  - the batch rows (row number, full row contents);
+  - the current date and the mode;
+  - instructions to read this file and the four `reference/` files.
+- Each subagent returns, for each row, one compact record:
+  - `row`, `commitment` (first 80 characters)
+  - `action`: `change` | `note` | `none`
+  - `status`, `updated`, `references`, `notes`
+  - `reasoning` (2–3 sentences)
+  - `date_correction` (true if only `Updated` changed).
+- The parent agent then:
+  - checks that each record's `commitment` matches the CSV row;
+  - opens each new `100` and `-100` reference URL to confirm it supports the claim;
+  - applies the edits;
+  - emits one line per changed row (for example, "Row 42: 10 → 50, bill reported back 18/06/2026");
+  - writes `state.json`.
+- If subagents are not available, process one row at a time. Keep only that one-line summary per row in your working notes.
 
 ## Search budget per row
 
-- 2–3 web searches
-- 1–2 page reads
-- 1 synthesis call (the final status decision)
+- Base: 3 searches and 2 page reads.
+- Escalation: up to 3 more searches and 2 more page reads when any of these applies:
+  - the base searches find no primary record dated since `Updated`;
+  - the commitment is about operation or implementation rather than legislation;
+  - the evidence points to a delay, a quiet change, or a failure.
 
-If the budget is exhausted before a confident decision:
-
-- Do not modify the row in the CSV.
-- Emit a `Note:` in the markdown report for that row (see `reference/output-format.md`).
-- Update `state.json` with `action: "noted"` and move on.
+If the budget runs out before you reach a confident decision, don't modify the row. Add a report note and continue.
 
 ## Edge cases
 
-- **Past-due `0`-row**: If a row's `Status` is `""`/`0` and its `Due` date is in the past, do not auto-flip to `-100`. Surface as a `Note:` in the report for human review. The flip to `-100` is always a human decision.
-- **Ambiguous commitment**: If the commitment text is unclear or could be interpreted multiple ways, emit a `Note:` rather than guess. The user can clarify in a follow-up run.
-- **Source tier conflict**: If a Tier 1 source disagrees with a Tier 2 source, defer to Tier 1. If two Tier 1 sources disagree, surface a `Note:`.
-- **Quiet walkaway**: A commitment that was "wound back" or partially delivered under a different name is typically a positive fraction (e.g., `33` if 1 of 3 sub-deliverables delivered) rather than `-100`. The `-100` is for binary deliverables that didn't happen, or for explicit abandonment. See `reference/state-machine.md` for the failure definition.
-- **CSV schema drift**: If a column is added/renamed/removed since the last run, the CSV hash will not match `state.json`. Treat as a fresh run and proceed.
+- **Past-due 0-row.** If a row's Status is empty or `0`, its `Due` date has passed, and no action is found, don't flip it to `-100`. Add a report note. That flip is always the user's decision.
+- **Delayed, not abandoned.** If a minister says something will happen "next term" or later, that is not a failure. Keep the current Status and add a report note.
+- **Narrow wording.** Score the commitment's literal deliverable. "Support to select committee" is complete once the select committee stage is finished, even if the bill later fails. If the literal reading gives a result the user might dispute, apply it and flag it in the report's reasoning.
+- **Ambiguous commitment or possible terminology mismatch.** Add a report note rather than guess.
+- **Source conflict.** Primary records beat news. If two primary records conflict, add a report note.
+- **Quiet walkaway.** A commitment that was wound back or partly delivered under another name scores a positive fraction. `-100` is only for an explicitly dropped commitment, a binary deliverable replaced by the opposite policy, or a documented failure. See `reference/state-machine.md`.
+- **Prior `100` in full re-check mode.** Downgrade only if a primary record, or two independent news outlets, show the 100% picture is not true. One example is a numeric target that was officially missed. If one limb of the commitment is still unfinished but no one disputes the delivery, keep `100` and flag it in the report.
+- **The same commitment in more than one agreement.** Some commitments appear as separate rows for different parties, with identical text. Research them once and give every copy the same `Status`, `Updated`, `References` and `Notes`. The validator warns when the copies differ.
+- **CSV schema drift.** If a column was added, renamed or removed, the hash will not match. Treat the run as a fresh run.
 
 ## Resume
 
-The skill supports resume via `.agent/skills/update-coalition-tracker/state.json`:
+Resume uses `.agents/skills/update-coalition-tracker/state.json`, which is gitignored:
 
-- At run start, read `state.json` if it exists.
-- If `csv_hash_at_start` matches the current CSV hash, this is a **resume** — start from `last_processed.row_number + 1`.
-- If the hash doesn't match, the CSV was edited between runs — treat as a fresh run, log a warning in the markdown report, and overwrite `state.json` with the new hash.
-- The state file is atomic-written (write to `.tmp`, rename) after each row.
-- The state file is deleted when the run completes successfully.
+```json
+{
+  "csv_hash_at_start": "<sha256 of data.csv when the run started>",
+  "csv_hash_current": "<sha256 after the last applied batch>",
+  "mode": "standard",
+  "started": "DD/MM/YYYY",
+  "last_processed": { "row_number": 40, "commitment": "<exact text>", "action": "change" },
+  "pending_notes": [ { "row": 21, "commitment": "...", "note": "..." } ],
+  "pending_changes": [ { "row": 14, "commitment": "...", "from": "0", "to": "50", "references": "...", "reasoning": "..." } ]
+}
+```
 
-If a partial run is interrupted, the next invocation resumes from the last atomic write. Manual edits to the CSV between runs (which would change the hash) cause a fresh run — the user should expect to re-review from row 1 in that case.
+- At the start of a run, read `state.json` if it exists.
+- If the current CSV hash matches `csv_hash_current` and the CSV row at `last_processed.row_number` has the same commitment text, this is a **resume**. Continue from the next row and carry over `pending_notes` and `pending_changes`, which feed the report.
+- Otherwise the CSV was edited between runs. Start a fresh run, overwrite `state.json`, and record the hash mismatch in the report header.
+- Write the file atomically after each batch: write to `state.json.tmp`, then rename it.
 
 ## Output
 
-After processing all eligible rows, write `docs/research-runs/YYYY-MM-DD.md`. See `reference/output-format.md` for the full spec. The report contains:
-
-- Header with counts: rows reviewed, excluded (Status=100), excluded (Status=-100), proposed changes, notes/unable to verify.
-- A `## Proposed changes` section with one entry per modified row.
-- A `## Notes` section with one entry per row that the AI flagged but did not modify (past-due, ambiguous, search failures, etc.).
-
-The git diff of `src/data/data.csv` is the primary audit trail. The markdown report is the secondary trail — it explains *why* the changes were made, which a CSV diff alone cannot show.
+- `src/data/data.csv`, edited in place. Its git diff is the primary audit trail.
+- `docs/research-runs/YYYY-MM-DD.md`. The report explains *why* each change was made. See `reference/output-format.md`.
 
 ## References
 
-- `reference/state-machine.md` — Status values, variance rules, failure definition
-- `reference/source-tiers.md` — Authoritative source list (beehive, parliament, news, etc.)
-- `reference/output-format.md` — Markdown report format
-- `reference/reasoning-examples.md` — Worked examples of good vs. bad reasoning
+- `reference/state-machine.md`: Status values, the meaning of 100% for each kind of commitment, and the failure definition
+- `reference/source-tiers.md`: source tiers, implementation evidence, and the escalation search strategy
+- `reference/output-format.md`: the CSV rules and the report format
+- `reference/reasoning-examples.md`: worked examples taken from earlier runs
+- `scripts/validate.mjs`: the data validator to run before the build

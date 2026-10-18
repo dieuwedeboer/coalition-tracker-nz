@@ -1,73 +1,103 @@
 # Reasoning Examples
 
-Worked examples to calibrate the AI's editorial judgement. The pattern across all examples: the AI anchors on the current Status, defines what 100% would look like for *this specific* commitment, then reads the evidence against that picture.
+These are worked examples from earlier research runs. The report each one comes from is given in brackets. The facts are as recorded at the time and have not been re-checked since, so use the examples to learn the *reasoning*. Don't cite them as evidence for the current status of a row.
 
-## Example 1 — Bill progresses to second reading
+Every example follows the same pattern:
+1. Anchor on the current Status.
+2. Write down what 100% means for this commitment's verb.
+3. Compare the evidence against that.
+4. Choose the value, and explain why it isn't the next value up.
 
-**Commitment**: "Introduce legislation to ban gang patches, stop gang members gathering in public, and stop known gang offenders from communicating with one another."
+## 1. Narrow wording: score the literal deliverable
 
-**Current Status**: 10 (In Progress). `Updated`: 2024-03-07. `Due`: 2024-03-08.
+**Commitment**: "Support to select committee a bill that would enact a binding referendum on a four-year term of parliament." Current Status `20`. [2026-08-15]
 
-**AI research**: Searches parliament.nz for the gang legislation bill. Finds it has progressed to second reading on 2026-05-12. No Royal Assent yet. The 100% picture is "all three elements of the commitment have been enacted into law".
+**What 100% means**: The commitment is limited to supporting the bill through the select committee stage. It is not a promise to pass the bill or hold a referendum.
 
-**Decision**: 50 (Substantially advanced). The bill is in flight; one of three parliamentary stages complete (introduction → select committee → second reading). Not yet at 100% because Royal Assent has not occurred.
+**Evidence**: The bill had its first reading on 05/03/2025, and the select committee reported back in August 2025. In February 2026, 1News reported that the minister would not take the bill to second reading this term.
 
-**Notes**: "Gang legislation bill passed second reading 2026-05-12; awaiting third reading. Status 50 reflects substantial legislative progress, not completion."
+**Decision**: The literal deliverable appears to be met, but an earlier human review held the row at `20`. The run kept `20` and flagged it for review: "do not casually flip to 100 on the narrow wording, and do not flip to -100 because the bill is deferred, not repealed."
 
-## Example 2 — Repeal that quietly didn't happen
+**Lesson**: A narrow verb can mean 100 even when the policy as a whole stalls. When the literal reading and an earlier human decision disagree, raise it as a note. Don't override the human decision silently.
 
-**Commitment**: "Abolish the Resource Management Act 1991."
+## 2. Delayed is not failed
 
-**Current Status**: 0 (Not Started). `Updated`: 2023-11-27. `Due`: empty.
+**Commitment**: "Repeal the Canterbury Regional Council (Ngāi Tahu Representation) Act 2022." Current Status `10`. [2026-08-15]
 
-**AI research**: Searches beehive.govt.nz and parliament.nz for "RMA repeal". Finds that the government has instead pursued a series of RMA *amendments* (the "RMA Amendment Bill" of 2024, the "RMA Reform Bill" of 2025) rather than a full repeal. A Cabinet Paper from 2026-04-08 confirms that full repeal is no longer the policy; the government is now focused on replacement legislation.
+**Evidence**: The NZ Herald (21/07/2026) reported that the Local Government Minister conceded the repeal "will have to wait until next term". The Act remains in force.
 
-**Decision**: -100 (Failed). The deliverable is binary (repeal or not), and the policy is now explicitly replacement, not repeal. A source exists (the Cabinet Paper) documenting the pivot.
+**Decision**: Keep `10`, plus a note: "Not auto-flipped to -100; delayed, not abandoned. Human call whether to keep 10 or move to -100."
 
-**Notes**: "Full RMA repeal quietly shelved; government pursuing RMA replacement legislation instead (Cabinet Paper 2026-04-08). Status -100 reflects the policy pivot away from repeal."
+**Lesson**: "Next term" is a delay. `-100` needs the Government to drop the commitment explicitly, or a one-off deliverable that can no longer happen.
 
-## Example 3 — Continuous commitment with partial delivery
+## 3. Re-check a prior 100 against a numeric target
 
-**Commitment**: "Build infrastructure with 13 new Roads of National Significance and four major public transport upgrades."
+**Commitment**: "Commit to training no fewer than 500 new frontline police within the first two years." Current Status `100`. Full re-check mode. [2026-07-09]
 
-**Current Status**: 10 (In Progress). `Updated`: 2023-12-05. `Due`: 2024-03-08.
+**What 100% means**: 500 additional frontline officers by about 27/11/2025.
 
-**AI research**: Searches for progress on the 13 RONS. Finds 4 RONS are under construction, 5 are in planning/consultation, and 4 have not started. The 100% picture is "all 13 RONS and 4 PT upgrades complete and operational".
+**Evidence**: In November 2025, 1News reported that the target had been missed and that Treasury projected it would be reached in September 2026. The programme is still funded and recruiting.
 
-**Decision**: 33 (3 of 9 major projects complete... actually 4 of 13 RONS plus planning on others). Hmm — 4 of 13 is roughly 30%, so `30` (10-multiple) is defensible. The k-fraction approach (1/3, 1/4) doesn't fit cleanly because the k=13 (or k=17 including PT upgrades) doesn't yield clean fractions. The AI picks `30`.
+**Decision**: `100 → 50`. The target was officially missed, so `100` can't stand. The programme continues, so this is partial progress, not `-100`.
 
-**Notes**: "4 of 13 RONS under construction, 5 in planning, 4 not started. 30% reflects the construction-stage progress on the 4 underway RONS."
+**Lesson**: A numeric target is met only when the number is reached. A funded recruitment programme is not enough. This was the only downgrade among 78 rows at `100`. Downgrades need clear evidence.
 
-## Example 4 — Past-due 0-row
+## 4. Implementation evidence when there is no press release
 
-**Commitment**: "Investigate the threshold at which local lines companies can invest in generation assets."
+**Commitment**: "By or before 2026, assess the impact inflation has had on the average tax rates faced by income earners." Current Status `0`. [2026-08-15]
 
-**Current Status**: empty (Not Started). `Updated`: 2023-11-27. `Due`: empty.
+**What 100% means**: A published official assessment, completed by or before 2026. The commitment does not require any change to tax policy.
 
-**AI research**: Searches beehive.govt.nz and parliament.nz for "lines companies generation threshold". No relevant results.
+**Evidence**: Treasury Analytical Note AN 25/07 covers the assessment. There was no beehive release announcing it as delivery of the commitment.
 
-**Decision**: 0 retained. Do not auto-flip to -100. Surface as a `Note:` in the report. The flip to -100 is a human decision.
+**Decision**: `0 → 50`, with the Treasury note as the reference. The run stopped short of `100` because the note is a broader paper on the tax base rather than a standalone assessment of this commitment.
 
-**Notes** (in the report, not in the CSV): "Row 33: no public action found for 'lines companies generation threshold'. Commitment may have been quietly shelved or may be a terminology mismatch. Awaiting user clarification before proposing -100."
+**Lesson**: An agency publication is a Tier 1 primary record, even when no minister announced it. An "assess" commitment can reach 100 without any policy change. Score it by whether the assessment exists and how closely it matches the commitment.
 
-## Example 5 — No change despite fresh search
+## 5. A sector body as a lead, checked against the Budget
 
-**Commitment**: "Maintain the superannuation age at 65."
+**Commitment**: "Ensure Plunket is funded to do their job properly." Current Status empty. [2026-08-15]
 
-**Current Status**: empty (Not Started). `Updated`: 2023-11-27. `Due`: empty.
+**Evidence**: NZNO's journal Kaitiaki (29/05/2026) said Budget 2026 contained no dedicated Plunket funding. No funding announcement from the Government was found.
 
-**AI research**: Searches for "superannuation age New Zealand 65". Finds no government action to change the superannuation age. The 100% picture is binary: "the superannuation age remains 65". It does — so 100% is technically true, but the Status is `""`/`0` because the original status reflected that the commitment was a "do not change" promise, not a "make a change" promise. The AI recognises that the original intent is preserved and the current Status reflects the *current state* (which is "no change needed, no public action required").
+**Decision**: Leave it empty, plus a note. Under the current `source-tiers.md`, the sector claim is a Tier 3 lead. The next step is to check Vote Health in the Estimates for a Well Child Tamariki Ora or Plunket line, and cite the Estimates rather than NZNO.
 
-**Decision**: 0 retained. Do not modify the CSV. Do not add a `Note:` (the row is healthy — "no change" is the expected state).
+**Lesson**: Outside commentary often reveals delivery, or the lack of it, that the Government never announces. Follow the lead to the primary record.
 
-## Example 6 — Bad reasoning to avoid
+## 6. Rule changes that soften a commitment rather than meet it
 
-**Commitment**: "Cut health waiting times by training more doctors, nurses, and midwives, and giving Kiwis access to 13 more cancer treatments."
+**Commitment**: "Remove median wage requirements from Skilled Migrant Category visas." Current Status `67`. [2026-08-15]
 
-**Current Status**: 100 (Delivered). `Updated`: 2024-06-24. `Due`: empty.
+**Evidence**: Immigration NZ's operational pages confirmed that the wage-threshold rules would change on 24/08/2026. Median-wage tests are modified, not removed, and new pathways still require 1.0–1.1 times the median wage.
 
-**Bad AI reasoning**: "The 13 cancer treatments are listed in a Ministry of Health document, and training places have been announced. Status retained at 100." — but the AI didn't actually verify that the treatments are *funded and accessible*, only that they're *listed*. That's a "Tier 3 leak" — the AI has conflated a list with delivery.
+**Decision**: Keep `67`, plus a note that "remove" may not be the right description once the rules take effect.
 
-**Better**: "The 13 cancer treatments are funded and accessible per the 2024-06-24 beehive release. Training places have been announced but most are not yet in service. The 100% for this commitment requires both: (a) treatments accessible, (b) training pipeline expanded. (a) is true; (b) is in progress. However, the current Status is 100 and the user's prior reasoning (per the 2024-06-24 update) appears to have weighted (a) as sufficient. The AI retains 100 but flags in Notes that training pipeline is still expanding."
+**Lesson**: An agency's operational pages are the authoritative source for rule changes, which often have no beehive release. Compare the exact verb ("remove") with what the rules actually do ("modify").
 
-This shows the anchor principle: the AI doesn't casually override a prior `100` just because it found a sub-element still in progress. It surfaces the tension in `Notes` for the user to adjudicate.
+## 7. Possible terminology mismatch
+
+**Commitment**: "Investigate the establishment of an 'Essential Worker' workforce planning mechanism…" Current Status empty. [2026-08-15]
+
+**Evidence**: No investigation branded "Essential Worker" was found. Related tools exist: the National Occupation List, the Green List, and the SMC trades pathway.
+
+**Decision**: Leave it empty, plus a note: "Possible terminology mismatch or quiet shelving. Candidate for human review, not an automatic -100."
+
+**Lesson**: Search again using the agency's own vocabulary before concluding that nothing happened. If the link is still uncertain, flag it rather than give credit for related work.
+
+## 8. Updated is when the commitment was delivered, not when it was announced
+
+**Commitment**: "Establish a Regional Infrastructure Fund with $1.2 billion in capital funding over the Parliamentary term." Status `100`. [2026-08-15, delivery date corrections]
+
+**Evidence**: The fund was funded in Budget 2024 on 30/05/2024 and opened to applications on 01/07/2024.
+
+**Decision**: `Updated` changed from `30/05/2024` to `01/07/2024`, the day the fund began operating.
+
+**Lesson**: For `100` rows, `Updated` is the date the 100% picture became true. That is the date something came into force, started operating, or was reached. It is not the date of the Budget, the announcement, or the research run (ADR 0002).
+
+## Reasoning to avoid
+
+- **Treating a list as delivery.** "The treatments are on a Ministry list, so they are delivered." Check that they are funded and accessible.
+- **Treating an announcement as delivery.** "The minister announced the fund, so it's 100." Look for the date it started operating.
+- **Treating a replacement as failure.** "The Act is being replaced rather than repealed, so it's -100." If the replacement achieves the commitment's aim, score it as progress.
+- **Using a debate as evidence.** "The minister told the House it's done." A Hansard speech is a claim. Find the record of the thing being done.
+- **Using the run date.** Writing today's date into `Updated` because you looked at the row today.

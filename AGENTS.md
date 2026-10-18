@@ -4,9 +4,11 @@
 - `npm start` - Development server
 - `npm run build` - Production build to `/docs`
 - `npx tsc --noEmit` - Type check
+- `node .agents/skills/update-coalition-tracker/scripts/validate.mjs` - Validate `src/data/data.csv` (Status values, references, date formats)
 
 ## Before Commit
 - Build must succeed
+- If `src/data/data.csv` changed, the data validator must report no errors
 - Use chrome-devtools: verify no console errors, take snapshot to confirm rendering
 
 ## Code Style

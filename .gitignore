@@ -1,3 +1,4 @@
 /node_modules
 *.log
-.agent/skills/update-coalition-tracker/state.json
+.agents/skills/update-coalition-tracker/state.json
+.agents/skills/update-coalition-tracker/state.json.tmp

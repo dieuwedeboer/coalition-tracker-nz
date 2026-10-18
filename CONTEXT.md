@@ -17,8 +17,12 @@ A numeric editorial score indicating how much concrete public action has been ta
 _Avoid_: Progress (implies a continuous journey rather than an editorial judgement)
 
 **Failure**:
-A commitment is "failed" when its deliverable is no longer being pursued, was explicitly dropped, was replaced with an opposite policy, or expired past its due date with no action. All failures are marked Status `-100`. A failure row must cite a source in `References` documenting the failure or abandonment.
+A commitment is "failed" when it was explicitly dropped, a binary deliverable was replaced with the opposite policy, or a time-bound one-off deliverable can no longer happen. Delay (including "next term") is not failure, and a past-due row with no action is only a candidate for failure: the flip to `-100` is a human decision. All failures are marked Status `-100`. A failure row must cite a source in `References` documenting the failure or abandonment.
 _Avoid_: Partial failure (a commitment that delivered some of its sub-parts is a positive fraction, not a negative score)
+
+**Updated**:
+The date of the event that justifies a commitment's current Status, in `DD/MM/YYYY` format: the delivery date for `100`, the date the failure became public for `-100`, and the date of the latest concrete advance for in-progress rows. It is not the date a row was edited or researched (ADR 0002).
+_Avoid_: Last modified, last checked
 
 **Concrete advance**:
 A specific public action — bill introduced, policy paper published, programme launched, budget allocated — that has demonstrably moved a commitment forward. Distinct from rhetoric (re-stating the commitment, expressing intent). Only public evidence counts; internal decisions count only when disclosed in Hansard, OIA releases, or other public records.
@@ -29,7 +33,7 @@ A source — typically a URL — supporting the current Status of a commitment. 
 _Avoid_: Citation (academic connotation), source (overloaded with code meaning)
 
 **Source tier**:
-The authority ranking of a source, used by the AI research loop to weight evidence. Tier 1 (ground truth) is beehive.govt.nz releases, parliament.nz (Hansard, bill pages), and legislation.govt.nz — these alone can confirm "Delivered" or "Failed". Tier 2 (corroboration) is mainstream NZ news (RNZ, NZ Herald, Stuff, Newsroom, 1News) — used to corroborate Tier 1, not to deliver verdicts alone. Tier 3 (weak) is party websites, social media, lobby-group statements — supports "in progress" claims, never a delivery verdict.
+The authority ranking of a source, used by the AI research loop to weight evidence. Tier 1 (primary records) is government and parliamentary records (beehive.govt.nz, parliament.nz bill pages and written question answers, legislation.govt.nz including secondary legislation, the Gazette) plus implementation evidence from implementing agencies, Budget documents, official statistics, independent officers of Parliament, and OIA responses — these alone can confirm "Delivered" or "Failed". Tier 2 (independent reporting) is NZ general, specialist and sector news — it corroborates, and two independent outlets reporting the same fact can support a verdict. Tier 3 (claims and leads) is parties, lobby and sector bodies, Wikipedia, and Hansard debate speeches — it supports "in progress" claims and points to primary records, never a verdict. The full list is in the research skill's `reference/source-tiers.md`.
 _Avoid_: Reliable source (vague), credible source (subjective)
 
 **Past-due**:

@@ -1,55 +1,86 @@
 # Source Tiers
 
-Authoritative sources for commitment research, in priority order. The AI uses these tiers to weight evidence when deciding a new Status.
+Many commitments are delivered without a beehive release, a bill, or a party press release. Examples include operational changes, agency rule changes, funding that is only visible in the Estimates, and investigations that end in an internal report. So the research must also look for **implementation evidence**: proof in the records of the people doing the work that the thing exists or has happened.
 
-## Tier 1 — Ground truth
+## Tier 1: primary records
 
-Sources that can confirm "Delivered" or "Failed" on their own.
+These can confirm `100` or `-100` on their own.
 
-- **beehive.govt.nz** — NZ Government press releases. The primary source for policy announcements, Cabinet decisions, programme launches, and ministerial statements.
-- **parliament.nz** — Hansard debates, select committee reports, bill progress. Use for legislative commitments to track bill stages (introduction, first/second/third reading, Royal Assent).
-- **legislation.govt.nz** — Bills and Acts. The authoritative source for whether a bill has become law.
-- **environment.govt.nz**, **health.govt.nz**, **mbie.govt.nz**, etc. — Ministry/department sites. Useful for implementation details.
+**Government decisions and law**
+- **beehive.govt.nz**: ministerial releases and speeches.
+- **parliament.nz**:
+  - bill progress pages and select committee reports;
+  - answers to written parliamentary questions;
+  - the procedural record in Hansard: votes and readings.
+- **legislation.govt.nz**: Acts, bills, and **secondary legislation**, including regulations, orders in council, and commencement orders. Check the "in force" status, not only whether the Act was passed.
+- **gazette.govt.nz**: notices, commencement dates, appointments.
+- **Cabinet papers and minutes** that agencies release proactively, usually on the agency's own site or on dpmc.govt.nz.
 
-**Rule**: A Tier 1 source alone can confirm `100` (Delivered) or `-100` (Failed). The AI should prefer Tier 1 sources whenever available.
+**Implementing agencies.** Use these for operational delivery:
+- Ministries and departments: Treasury, MBIE, MfE, MoH, MSD, MoE, MoJ, DIA, IRD, MPI, MFAT, Te Puni Kōkiri, Oranga Tamariki.
+- Crown entities and operational agencies: Health NZ – Te Whatu Ora, NZTA Waka Kotahi, Kāinga Ora, Immigration NZ, NZ Police, Pharmac, the Electricity Authority, the Commerce Commission.
+- Useful evidence from these sites:
+  - operational policy and guidance pages;
+  - application forms that are open;
+  - fees and thresholds tables;
+  - annual reports;
+  - Statements of Intent;
+  - tender notices on GETS (gets.govt.nz).
 
-## Tier 2 — Corroboration
+**Budget documents.** Vote appropriations in the Estimates and Supplementary Estimates, Budget initiative summaries, and fiscal updates (treasury.govt.nz/budget.govt.nz). These show whether money was actually appropriated.
 
-Mainstream NZ news. Used to corroborate Tier 1, not to deliver verdicts alone.
+**Official statistics and monitors**
+- Stats NZ and RBNZ data.
+- Independent officers of Parliament: the Auditor-General, the Ombudsman, and the Parliamentary Commissioner for the Environment.
+- Statutory monitors: the Climate Change Commission and the Infrastructure Commission.
+- Court and tribunal decisions.
 
-- **rnz.co.nz** — Radio New Zealand
-- **nzherald.co.nz** — NZ Herald
-- **stuff.co.nz** — Stuff
-- **newsroom.co.nz** — Newsroom
-- **1news.co.nz** — TVNZ 1News
-- **newstalkzb.co.nz** — Newstalk ZB
+**OIA responses.** An agency's own response document counts as Tier 1 for what it discloses, including when it is hosted on fyi.org.nz.
 
-**Rule**: Tier 2 can support a `100` claim *if* a Tier 1 source corroborates. Tier 2 alone is not sufficient for `100`. Tier 2 is sufficient for `10`–`50` claims about progress.
+**Councils.** For commitments delivered through local government: council meeting minutes and decisions, and regional council records.
 
-## Tier 3 — Weak
+**Hansard speeches.** A minister's claim during a debate is a political statement, not a record that something happened. It is Tier 3 evidence of intent. Hansard is Tier 1 only for procedural facts, such as votes and readings.
 
-Party and lobby-group sources. Used only for "in progress" claims, never for delivery verdicts.
+## Tier 2: independent reporting
 
-- Party websites and press releases (national.org.nz, act.org.nz, nzfirst.nz)
-- Party social media (verified party accounts only)
-- Lobby-group statements (Family First, Hobson's Pledge, etc.)
+Use for corroboration and for progress claims up to `90`. To support `100` or `-100`, Tier 2 needs either a Tier 1 record or **two independent Tier 2 outlets** reporting the same fact. For example, a minister admitting in an interview that a target was missed is enough when two outlets report it.
 
-**Rule**: Tier 3 supports `10` claims about "we are working on this" or "we have announced this". Tier 3 alone is not sufficient for any status change from 0/10 to a higher value.
+- **General news:** RNZ, NZ Herald, Stuff, The Post, The Press, Newsroom, 1News, Newstalk ZB, The Spinoff.
+- **Specialist news:** BusinessDesk, interest.co.nz, Local Democracy Reporting stories, Te Ao Māori News, Waatea News.
+- **Sector and trade press:** NZ Doctor, Farmers Weekly, Education Gazette, LawNews, the Kaitiaki Nursing journal. These are especially useful for operational changes that never get a press release.
 
-## Edge cases
+Investigative reporting is still Tier 2.
 
-- **Hansard on a Tuesday** — Hansard debates often contain the first public disclosure of policy positions. Treat Hansard as Tier 1 even though it's parliament.nz (not a press release).
-- **Beehive tweets** — Beehive press releases are sometimes shared on social media first. Cross-check the beehive.govt.nz site; the website is canonical.
-- **OIA releases** — OIA documents count as Tier 1 for what they disclose (e.g., a Cabinet paper is Tier 1 evidence of internal decisions).
-- **Newsroom.co.nz investigations** — Investigative reporting is Tier 2, not Tier 1. Even strong investigations are corroboration, not ground truth.
+## Tier 3: claims and leads
+
+- Party websites, releases and social media.
+- Lobby groups, unions, professional and sector bodies (for example NZNO, Federated Farmers, Medicines NZ), and think tanks.
+- Wikipedia.
+- Speeches made in debates.
+
+Tier 3 can support a `10` claim that work has started. Otherwise, use Tier 3 only as a **lead**. If a sector body says "Budget 2026 contained no Plunket funding", check that claim against Vote Health in the Estimates. Don't cite the sector body's statement as proof.
 
 ## Search strategy
 
-Per row, the AI should aim for:
+### Base searches: 3 searches, 2 page reads
 
-1. One search to check for new public action since `Updated` (e.g., site:beehive.govt.nz "[key term]" after:YYYY-MM-DD).
-2. One search for the commitment's specific deliverable (e.g., a bill name on parliament.nz).
-3. One search for general news coverage if the above two are sparse.
-4. Read 1–2 of the top hits, prioritising Tier 1 sources.
+1. Search primary records for a new advance since `Updated`. For example: `site:beehive.govt.nz <key term>`, or the bill name on parliament.nz or legislation.govt.nz.
+2. Search the implementing agency for the deliverable itself. For example: `site:immigration.govt.nz skilled migrant median wage`, or `site:tewhatuora.govt.nz <programme>`.
+3. Search for news coverage of the commitment since `Updated`. Include the words a reporter would use, not only the coalition agreement's wording.
 
-If the commitment is in a portfolio with a relevant ministry (e.g., Health commitments → health.govt.nz, Te Whatu Ora), one of the searches can target the ministry directly.
+### Escalation: up to 3 more searches and 2 more page reads
+
+Escalate when the base searches find no primary record. Choose the searches that fit the commitment:
+
+- **Was it funded?** Search the Estimates or Budget initiatives for the relevant Vote.
+- **Did anyone ask?** Search for written parliamentary questions, or for OIA requests on fyi.org.nz about the topic.
+- **Is it in force?** Search for secondary legislation, commencement orders, or Gazette notices.
+- **Is it operating?** Look for operational guidance, forms, eligibility pages, or tender notices from the agency.
+- **Was it quietly changed?** Search news for the topic together with "delayed", "scrapped", "not proceeding", "next term", or "missed target".
+- **Different terminology?** Rephrase the search in the agency's language. For example, search "workforce planning" for a commitment about "essential workers".
+
+### Before citing a source
+
+- Prefer the page that records the fact over a page that reports it. Cite a news article only when there is no primary record.
+- Check that the date of the evidence is later than the row's current `Updated` value before treating it as new progress.
+- Searches do not support date filters reliably. Read the page's publication date rather than assuming a search's `after:` filter worked.

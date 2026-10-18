@@ -7,4 +7,4 @@ The coalition tracker was originally maintained in a Google Sheet, with the CSV 
 - The README and `Footer.tsx` Google Sheet link may need to be re-described as "view only" or removed; the CSV is what the build reads.
 - Manual edits to the canonical data go through the CSV, not the Google Sheet.
 - The build pipeline is unchanged.
-- Resume is supported via a gitignored `state.json` next to the skill, not via the `Updated` field on the CSV (which retains its "last actual change" semantic).
+- Resume is supported via a gitignored `state.json` next to the skill, not via the `Updated` field on the CSV. (The meaning of `Updated` is set by ADR 0002.)
