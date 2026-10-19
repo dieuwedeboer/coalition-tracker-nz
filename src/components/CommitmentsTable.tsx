@@ -165,7 +165,7 @@ const StatusMeter = ({ status }: { status: number | boolean }) => {
     <Box sx={{ minWidth: 120 }}>
       <Box
         role="meter"
-        aria-valuemin={-100}
+        aria-valuemin={-1}
         aria-valuemax={100}
         aria-valuenow={value}
         aria-label="Status"

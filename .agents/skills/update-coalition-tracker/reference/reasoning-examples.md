@@ -16,7 +16,7 @@ Every example follows the same pattern:
 
 **Evidence**: The bill had its first reading on 05/03/2025, and the select committee reported back in August 2025. In February 2026, 1News reported that the minister would not take the bill to second reading this term.
 
-**Decision**: The literal deliverable appears to be met, but an earlier human review held the row at `20`. The run kept `20` and flagged it for review: "do not casually flip to 100 on the narrow wording, and do not flip to -100 because the bill is deferred, not repealed."
+**Decision**: The literal deliverable appears to be met, but an earlier human review held the row at `20`. The run kept `20` and flagged it for review: "do not casually flip to 100 on the narrow wording, and do not flip to -1 because the bill is deferred, not repealed."
 
 **Outcome**: On review on 19/10/2026, Dieuwe moved the row to `100`: the literal deliverable was met.
 
@@ -28,9 +28,9 @@ Every example follows the same pattern:
 
 **Evidence**: The 2026-08-15 run cited an NZ Herald report (21/07/2026) that the Local Government Minister conceded the repeal "will have to wait until next term". The 2026-10-19 run could not find that report again, so treat it as unverified. The Act remains in force.
 
-**Decision**: Keep `10`, plus a note: "Not auto-flipped to -100; delayed, not abandoned. Human call whether to keep 10 or move to -100."
+**Decision**: Keep `10`, plus a note: "Not auto-flipped to -1; delayed, not abandoned. Human call whether to keep 10 or move to -1."
 
-**Lesson**: "Next term" is a delay. `-100` needs the Government to drop the commitment explicitly, or a one-off deliverable that can no longer happen.
+**Lesson**: "Next term" is a delay. `-1` needs the Government to drop the commitment explicitly, or a one-off deliverable that can no longer happen.
 
 ## 3. Re-check a prior 100 against a numeric target
 
@@ -40,7 +40,7 @@ Every example follows the same pattern:
 
 **Evidence**: In November 2025, 1News reported that the target had been missed and that Treasury projected it would be reached in September 2026. The programme is still funded and recruiting.
 
-**Decision**: `100 → 50`. The target was officially missed, so `100` can't stand. The programme continues, so this is partial progress, not `-100`.
+**Decision**: `100 → 50`. The target was officially missed, so `100` can't stand. The programme continues, so this is partial progress, not `-1`.
 
 **Lesson**: A numeric target is met only when the number is reached. A funded recruitment programme is not enough. This was the only downgrade among 78 rows at `100`. Downgrades need clear evidence.
 
@@ -82,7 +82,7 @@ Every example follows the same pattern:
 
 **Evidence**: No investigation branded "Essential Worker" was found. Related tools exist: the National Occupation List, the Green List, and the SMC trades pathway.
 
-**Decision**: Leave it empty, plus a note: "Possible terminology mismatch or quiet shelving. Candidate for human review, not an automatic -100."
+**Decision**: Leave it empty, plus a note: "Possible terminology mismatch or quiet shelving. Candidate for human review, not an automatic -1."
 
 **Lesson**: Search again using the agency's own vocabulary before concluding that nothing happened. If the link is still uncertain, flag it rather than give credit for related work.
 
@@ -100,6 +100,6 @@ Every example follows the same pattern:
 
 - **Treating a list as delivery.** "The treatments are on a Ministry list, so they are delivered." Check that they are funded and accessible.
 - **Treating an announcement as delivery.** "The minister announced the fund, so it's 100." Look for the date it started operating.
-- **Treating a replacement as failure.** "The Act is being replaced rather than repealed, so it's -100." If the replacement achieves the commitment's aim, score it as progress.
+- **Treating a replacement as failure.** "The Act is being replaced rather than repealed, so it's -1." If the replacement achieves the commitment's aim, score it as progress.
 - **Using a debate as evidence.** "The minister told the House it's done." A Hansard speech is a claim. Find the record of the thing being done.
 - **Using the run date.** Writing today's date into `Updated` because you looked at the row today.

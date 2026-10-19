@@ -5,7 +5,7 @@ ADR 0001 described `Updated` as the date of the last actual change to a row. In 
 `Updated` now holds the date of the event that justifies the current Status:
 
 - `100`: the delivery date, meaning the date the commitment came into force, began operating, or reached its target. It is not the date of the announcement, the Budget, or Royal Assent with a later commencement.
-- `-100`: the date the failure or abandonment became public.
+- `-1`: the date the failure or abandonment became public.
 - In progress: the date of the latest concrete advance cited in `References`.
 - Empty or `0`: unchanged.
 

@@ -13,7 +13,7 @@ Edit the CSV in place. Write it back with RFC 4180 quoting (quote any field that
 |---|---|
 | `Status` | Use a value allowed by `state-machine.md`. Leave the cell empty for "not started" rows that are already empty. |
 | `Updated` | The date of the event that justifies the Status: the delivery date for `100` rows (ADR 0002). Use `DD/MM/YYYY`. |
-| `References` | One URL. Required for any Status above 0 and for `-100`. |
+| `References` | One URL. Required for any Status above 0 and for `-1`. |
 | `Notes` | A current-state summary of no more than 600 characters, starting "As at DD/MM/YYYY:". Replace stale content instead of appending to it. |
 
 Leave all other columns unchanged.
@@ -35,7 +35,7 @@ The bracketed values are placeholders. Every row heading quotes the start of the
 - Rows in CSV: <total>
 - Researched: <eligible rows actually researched>
   - Excluded (Status=100): <n>    ← standard mode only
-  - Excluded (Status=-100): <n>   ← standard mode only
+  - Excluded (Status=-1): <n>     ← standard mode only
   - Status changes: <n>
   - Date corrections: <n>
   - Notes for review: <n>
@@ -70,7 +70,7 @@ The bracketed values are placeholders. Every row heading quotes the start of the
 - **Excluded rows are counts only.** Don't list them row by row.
 - **A row you verified with no change does not appear in the report.** Leaving it out is the signal.
 - **Notes for review are for flags only.** Typical flags are:
-  - a past-due candidate for `-100`;
+  - a past-due candidate for `-1`;
   - an ambiguous commitment or a terminology mismatch;
   - conflicting primary records;
   - a budget that ran out;

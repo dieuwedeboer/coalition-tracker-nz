@@ -11,12 +11,12 @@ The Status field on each commitment is an editorial score. This file sets out ho
 | `20`–`90` | Intermediate progress | Multiples of 10. You must be able to explain the value. For example, a bill reported back from select committee and awaiting second reading is about `50`. |
 | `25`, `33`, `67`, `75` | k-fractions | Used when the commitment splits clearly into k parts. For example, a 3-limb commitment with one limb delivered is `33`. |
 | `100` | Delivered | The 100% picture is true now. |
-| `-100` | Failed | See *Failure definition*. Needs a source. |
+| `-1` | Failed | See *Failure definition*. Needs a source. |
 
 Rules:
 - `10` is the default when a commitment is in progress. Use a higher value only when you can explain why, and put that explanation in the report's reasoning and, briefly, in `Notes`.
 - k-fractions are worked out fresh on each run. Don't store the breakdown anywhere.
-- Decimals are not allowed. The only negative value allowed is `-100`. If a commitment has been partly abandoned, give it a positive fraction for the parts still delivered.
+- Decimals are not allowed. The only negative value allowed is `-1`. If a commitment has been partly abandoned, give it a positive fraction for the parts still delivered.
 
 ## What 100% means: read the verb
 
@@ -50,7 +50,7 @@ Example: the Smokefree repeal commitment. All three repeal limbs and the vaping 
 
 ## Failure definition
 
-A commitment has **failed** (`-100`) only when one of these is documented by a source:
+A commitment has **failed** (`-1`) only when one of these is documented by a source:
 
 - The Government, or a minister speaking officially, said the commitment has been dropped, or will not be delivered at all.
 - A binary deliverable was replaced by the opposite policy. For example, a promise to repeal X ended with X being kept and extended.
@@ -67,6 +67,6 @@ A commitment has **not** failed when:
 
 When a row's Status is empty or `0`, its `Due` date has passed, and you find no public action:
 
-- Do not set the Status to `-100`.
-- Add a report note: "Due DD/MM/YYYY has passed; no public action found; candidate for -100."
+- Do not set the Status to `-1`.
+- Add a report note: "Due DD/MM/YYYY has passed; no public action found; candidate for -1."
 - The user decides whether to change it.

@@ -13,7 +13,7 @@ export const STATUS_BUCKETS: StatusBucketInfo[] = [
   { key: 'advanced', label: 'Well Advanced', range: '50–90' },
   { key: 'early', label: 'Early Progress', range: '10–40' },
   { key: 'not-started', label: 'Not Started', range: '0' },
-  { key: 'failed', label: 'Failed', range: '−100' },
+  { key: 'failed', label: 'Failed', range: '−1' },
 ];
 
 const STATUS_COLOURS: Record<'light' | 'dark', Record<StatusBucket, string>> = {

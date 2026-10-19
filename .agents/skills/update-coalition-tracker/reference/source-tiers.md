@@ -4,7 +4,7 @@ Many commitments are delivered without a beehive release, a bill, or a party pre
 
 ## Tier 1: primary records
 
-These can confirm `100` or `-100` on their own.
+These can confirm `100` or `-1` on their own.
 
 **Government decisions and law**
 - **beehive.govt.nz**: ministerial releases and speeches.
@@ -43,7 +43,7 @@ These can confirm `100` or `-100` on their own.
 
 ## Tier 2: independent reporting
 
-Use for corroboration and for progress claims up to `90`. To support `100` or `-100`, Tier 2 needs either a Tier 1 record or **two independent Tier 2 outlets** reporting the same fact. For example, a minister admitting in an interview that a target was missed is enough when two outlets report it.
+Use for corroboration and for progress claims up to `90`. To support `100` or `-1`, Tier 2 needs either a Tier 1 record or **two independent Tier 2 outlets** reporting the same fact. For example, a minister admitting in an interview that a target was missed is enough when two outlets report it.
 
 - **General news:** RNZ, NZ Herald, Stuff, The Post, The Press, Newsroom, 1News, Newstalk ZB, The Spinoff.
 - **Specialist news:** BusinessDesk, interest.co.nz, Local Democracy Reporting stories, Te Ao Māori News, Waatea News.

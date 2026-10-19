@@ -6,7 +6,7 @@ const require = createRequire(resolve('package.json'));
 const Papa = require('papaparse');
 
 const path = process.argv[2] ?? 'src/data/data.csv';
-const allowed = new Set(['', '0', '10', '20', '25', '30', '33', '40', '50', '60', '67', '70', '75', '80', '90', '100', '-100']);
+const allowed = new Set(['', '0', '10', '20', '25', '30', '33', '40', '50', '60', '67', '70', '75', '80', '90', '100', '-1']);
 const expected = ['Category', 'Commitment', 'Party', 'Status', 'Updated', 'Due', 'References', 'Tags', 'LobbyFor', 'LobbyAgainst', 'Notes'];
 const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 const earliest = new Date(2023, 9, 14);
@@ -49,7 +49,7 @@ data.forEach((row, index) => {
 
   if (!allowed.has(status)) errors.push(`${label}: Status "${status}" is not an allowed value`);
 
-  if ((Number(status) > 0 || status === '-100') && !/^https?:\/\/\S+$/.test(references)) {
+  if ((Number(status) > 0 || status === '-1') && !/^https?:\/\/\S+$/.test(references)) {
     errors.push(`${label}: Status ${status} requires a single URL in References`);
   }
 
