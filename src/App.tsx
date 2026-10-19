@@ -207,21 +207,19 @@ const App = () => {
               <Grid item xs={12} md={7}>
                 <Stack spacing={3}>
                   <DeliveryTimeline data={data} />
-                  <CategoryBreakdown
-                    data={data}
-                    selected={filters.categories}
-                    onSelect={(category) => selectAndShow({ categories: toggleValue(filters.categories, category) }, !filters.categories.includes(category))}
-                  />
-                </Stack>
-              </Grid>
-              <Grid item xs={12} md={5}>
-                <Stack spacing={3}>
                   <PartyBreakdown
                     data={data}
                     selected={filters.parties}
                     onSelect={(party) => selectAndShow({ parties: toggleValue(filters.parties, party) }, !filters.parties.includes(party))}
                   />
                 </Stack>
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <CategoryBreakdown
+                  data={data}
+                  selected={filters.categories}
+                  onSelect={(category) => selectAndShow({ categories: toggleValue(filters.categories, category) }, !filters.categories.includes(category))}
+                />
               </Grid>
             </Grid>
 
