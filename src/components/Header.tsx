@@ -23,6 +23,7 @@ const Header = ({ mode, onToggleTheme }: HeaderProps) => {
         background: (theme) =>
           `rgba(${mode === 'light' ? '255, 255, 255' : '30, 30, 30'}, 0.95)`,
         backdropFilter: 'blur(10px)',
+        color: 'text.primary',
         borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         top: 0,
       }}

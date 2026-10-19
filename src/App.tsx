@@ -1,29 +1,52 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   ThemeProvider,
-  createTheme,
   CssBaseline,
   Container,
   Box,
   Fade,
   CircularProgress,
+  Grid,
+  Stack,
   Typography,
   FadeProps,
-  Chip,
+  useMediaQuery,
 } from '@mui/material';
 import {
   AccessTime,
 } from '@mui/icons-material';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import ElectionRibbon from './components/ElectionRibbon';
 import Header from './components/Header';
-import SummaryChart from './components/SummaryChart';
+import SummaryChart, { DeliveryTimeline } from './components/SummaryChart';
 import CommitmentsTable from './components/CommitmentsTable';
-import DetailCharts from './components/DetailCharts';
+import { CategoryBreakdown, DueDates, PartyBreakdown } from './components/DetailCharts';
 import Footer from './components/Footer';
 import { CommitmentRecord } from './types';
 import { fetchCommitmentData } from './services/csvDataService';
+import { parseDate } from './services/format';
+import { DEFAULT_FILTERS, toggleValue, useFilterState } from './services/filterState';
+import { StatusBucket } from './services/status';
 import { createCustomTheme } from './theme';
+
+const MODE_STORAGE_KEY = 'colour-mode';
+
+const readStoredMode = (): 'light' | 'dark' | null => {
+  try {
+    const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
+    return stored === 'light' || stored === 'dark' ? stored : null;
+  } catch {
+    return null;
+  }
+};
+
+const storeMode = (mode: 'light' | 'dark') => {
+  try {
+    window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+  } catch {
+    // Storage can be unavailable in private windows; the toggle still works for this visit.
+  }
+};
 
 const LoadingSpinner = () => (
   <Box
@@ -50,8 +73,10 @@ const PageTransition = (props: FadeProps) => (
 const App = () => {
   const [data, setData] = useState<CommitmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<'light' | 'dark'>('dark');
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)', { noSsr: true });
+  const [storedMode, setStoredMode] = useState(readStoredMode);
+  const mode = storedMode ?? (prefersDark ? 'dark' : 'light');
+  const [filters, updateFilters] = useFilterState();
 
   useEffect(() => {
     const loadData = async () => {
@@ -70,44 +95,48 @@ const App = () => {
     loadData();
   }, []);
 
-  const handleFilterChange = (filter: string | null) => {
-    setActiveFilter(filter);
+  const toggleMode = () => {
+    const next = mode === 'light' ? 'dark' : 'light';
+    storeMode(next);
+    setStoredMode(next);
   };
 
-  const theme = createCustomTheme(mode);
+  const scrollToCommitments = () => {
+    document.getElementById('commitments')?.scrollIntoView({ block: 'start' });
+  };
+
+  const selectAndShow = (changes: Parameters<typeof updateFilters>[0], adding: boolean) => {
+    updateFilters(changes);
+    if (adding) scrollToCommitments();
+  };
+
+  const clearFilters = () => {
+    updateFilters({
+      search: DEFAULT_FILTERS.search,
+      statuses: DEFAULT_FILTERS.statuses,
+      parties: DEFAULT_FILTERS.parties,
+      categories: DEFAULT_FILTERS.categories,
+      pastDue: DEFAULT_FILTERS.pastDue,
+    });
+  };
+
+  const theme = useMemo(() => createCustomTheme(mode), [mode]);
 
   const lastUpdated = useMemo(() => {
     if (data.length === 0) return null;
     const dates = data
-      .map(item => {
-        try {
-          return new Date(item.Updated.split('/').reverse().join('/'));
-        } catch {
-          return null;
-        }
-      })
-      .filter((d): d is Date => d !== null && !isNaN(d.getTime()));
+      .map(item => parseDate(item.Updated))
+      .filter((d): d is Date => d !== null);
     if (dates.length === 0) return null;
     return new Date(Math.max(...dates.map(d => d.getTime())));
   }, [data]);
-
-  const filteredData = activeFilter
-    ? data.filter((item) => {
-        const status = typeof item.Status === 'boolean' ? 0 : item.Status;
-        if (activeFilter === 'Not Started' && status === 0) return true;
-        if (activeFilter === 'In Progress' && status > 0 && status < 100) return true;
-        if (activeFilter === 'Delivered' && status === 100) return true;
-        if (activeFilter === 'Failed' && status < 0) return true;
-        return false;
-      })
-    : data;
 
   if (loading) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <ElectionRibbon />
-        <Header mode={mode} onToggleTheme={() => setMode(mode === 'light' ? 'dark' : 'light')} />
+        <Header mode={mode} onToggleTheme={toggleMode} />
         <LoadingSpinner />
       </ThemeProvider>
     );
@@ -117,13 +146,13 @@ const App = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <ElectionRibbon />
-      <Header mode={mode} onToggleTheme={() => setMode(mode === 'light' ? 'dark' : 'light')} />
+      <Header mode={mode} onToggleTheme={toggleMode} />
       <PageTransition in>
         <Box
           component="main"
           sx={{
             minHeight: 'calc(100vh - 64px)',
-            pt: 8,
+            pt: { xs: 4, md: 6 },
             pb: 4,
           }}
         >
@@ -131,10 +160,12 @@ const App = () => {
             <Box sx={{ mb: 4 }}>
               <Typography
                 variant="h3"
+                component="h1"
                 sx={{
                   textAlign: 'center',
                   mb: 1,
                   fontWeight: 700,
+                  fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
                   background: (theme) =>
                     `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
                   WebkitBackgroundClip: 'text',
@@ -142,7 +173,7 @@ const App = () => {
                   backgroundClip: 'text',
                 }}
               >
-                NZ Coalition Government Commitment Tracker 2024
+                NZ Coalition Government Commitment Tracker
               </Typography>
               <Typography
                 variant="body2"
@@ -153,30 +184,53 @@ const App = () => {
               </Typography>
             </Box>
 
-            <SummaryChart
-              data={data}
-              onFilter={handleFilterChange}
-              activeFilter={activeFilter}
-            />
-
             {lastUpdated && (
-              <Box sx={{ textAlign: 'center', mb: 3 }}>
-                <Chip
-                  icon={<AccessTime sx={{ fontSize: 16 }} />}
-                  label={`Data last updated ${formatDistanceToNow(lastUpdated, { addSuffix: true })}`}
-                  size="small"
-                  variant="outlined"
-                  sx={{ borderRadius: 2 }}
-                />
-              </Box>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75, mb: 3, mt: -2 }}
+              >
+                <AccessTime sx={{ fontSize: 16 }} aria-hidden="true" />
+                Most recent progress recorded {format(lastUpdated, 'd MMMM yyyy')}
+              </Typography>
             )}
 
-            <DetailCharts data={data} />
+            <Grid container spacing={3} sx={{ mb: 5 }}>
+              <Grid item xs={12}>
+                <SummaryChart
+                  data={data}
+                  selectedStatuses={filters.statuses}
+                  onToggleStatus={(status: StatusBucket) => updateFilters({ statuses: toggleValue(filters.statuses, status) })}
+                  onClearStatuses={() => updateFilters({ statuses: [] })}
+                />
+              </Grid>
+              <Grid item xs={12} md={7}>
+                <Stack spacing={3}>
+                  <DeliveryTimeline data={data} />
+                  <CategoryBreakdown
+                    data={data}
+                    selected={filters.categories}
+                    onSelect={(category) => selectAndShow({ categories: toggleValue(filters.categories, category) }, !filters.categories.includes(category))}
+                  />
+                </Stack>
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <Stack spacing={3}>
+                  <PartyBreakdown
+                    data={data}
+                    selected={filters.parties}
+                    onSelect={(party) => selectAndShow({ parties: toggleValue(filters.parties, party) }, !filters.parties.includes(party))}
+                  />
+                  <DueDates data={data} onShowPastDue={() => selectAndShow({ pastDue: true }, true)} />
+                </Stack>
+              </Grid>
+            </Grid>
 
             <CommitmentsTable
-              data={filteredData}
-              activeFilter={activeFilter}
-              onClearFilter={() => setActiveFilter(null)}
+              data={data}
+              filters={filters}
+              onFiltersChange={updateFilters}
+              onClearFilters={clearFilters}
             />
           </Container>
         </Box>

@@ -4,10 +4,9 @@ import data from '../data/data.csv';
 
 export const fetchCommitmentData = async (): Promise<CommitmentRecord[]> => {
   // Process and transform the data as needed
-  console.log(data);
   const processedData = data.map((row: any) => ({
     ...row,
-    Tags: row.Tags ? row.Tags.split(',') : [],
+    Tags: row.Tags ? row.Tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : [],
     Status: parseInt(row.Status ?? 0),
   }));
 

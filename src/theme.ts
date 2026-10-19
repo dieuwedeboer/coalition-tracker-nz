@@ -63,9 +63,9 @@ export const getDesignTokens = (mode: 'light' | 'dark') => ({
       }),
   },
   partyColors: {
-    National: '#0F3460',
-    ACT: '#FFA500',
-    'NZ First': '#1A1A1A',
+    National: '#00529F',
+    ACT: '#FDE401',
+    'NZ First': '#111111',
   },
   typography: {
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',

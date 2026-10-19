@@ -1,53 +1,69 @@
-import React, { useState, useEffect, useMemo, useTransition, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
+  Badge,
   Box,
+  Button,
   Card,
   CardContent,
   CardHeader,
   Chip,
   Collapse,
   Divider,
+  Drawer,
   FormControl,
   Grid,
   IconButton,
   InputLabel,
+  Link,
   MenuItem,
+  Paper,
   Select,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography,
-  TextField,
-  Paper,
-  Stack,
-  Zoom,
   Tooltip,
-  Badge,
-  ChipProps,
-  Alert,
-  LinearProgress,
-  Button,
+  Typography,
+  Zoom,
+  useMediaQuery,
 } from '@mui/material';
 import {
   ArrowDownward,
   ArrowUpward,
+  Close,
   ExpandLess,
   ExpandMore,
-  Search,
   FilterList,
-  Clear,
+  Search,
+  TableRows,
   ViewModule,
-  ViewList,
   Warning,
-  AccessTime,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { CommitmentRecord } from '../types';
-import { formatDistanceToNow } from 'date-fns';
+import {
+  getBucketInfo,
+  getStatusBucket,
+  getStatusColours,
+  getStatusValue,
+  STATUS_BUCKETS,
+} from '../services/status';
+import { formatDate, getReferenceInfo, isPastDue, parseDate } from '../services/format';
+import { FilterState, hasActiveFilters, SortField, toggleValue } from '../services/filterState';
+import PartyChip from './PartyChip';
 
 interface CommitmentsTableProps {
   data: CommitmentRecord[];
-  activeFilter: string | null;
-  onClearFilter: () => void;
+  filters: FilterState;
+  onFiltersChange: (changes: Partial<FilterState>) => void;
+  onClearFilters: () => void;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -76,35 +92,348 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Cyclone Gabrielle': '🌀',
 };
 
-const getPartyColor = (party: string, theme: any): ChipProps['color'] => {
-  if (party === 'National') return 'primary';
-  if (party === 'ACT') return 'secondary';
-  if (party === 'NZ First') return 'default';
-  return 'default';
+const TIER_DESCRIPTIONS: Record<number, string> = {
+  1: 'Tier 1: primary record (government, Parliament, legislation or implementing agency)',
+  2: 'Tier 2: independent news reporting',
+  3: 'Tier 3: party, lobby group or social media claim',
 };
 
-const CommitmentsTable = ({ data, activeFilter, onClearFilter }: CommitmentsTableProps) => {
-  const theme = useTheme();
+const splitParties = (party: string) => party.split(',').map(p => p.trim()).filter(Boolean);
 
-  const [orderBy, setOrderBy] = useState('Status');
-  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+const ReferenceLinks = ({ references }: { references: string }) => (
+  <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+    {references.split(/(https?:\/\/\S+)/).map((part, idx) =>
+      /^https?:\/\//.test(part) ? (
+        <Link key={idx} href={part} target="_blank" rel="noopener noreferrer">
+          {part.replace(/^https?:\/\/(www\.)?/, '')}
+        </Link>
+      ) : (
+        part
+      )
+    )}
+  </Typography>
+);
+
+const Evidence = ({ record }: { record: CommitmentRecord }) => {
+  const reference = getReferenceInfo(record.References);
+  const evidenceDate = formatDate(record.Updated);
+
+  if (!reference && !evidenceDate) return null;
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 0.75, rowGap: 0.25 }}>
+      {evidenceDate && (
+        <Typography variant="caption" color="text.secondary">
+          {evidenceDate}
+        </Typography>
+      )}
+      {reference && (
+        <>
+          <Link
+            href={reference.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="caption"
+            sx={{ fontWeight: 600 }}
+          >
+            {reference.domain}
+          </Link>
+          {reference.tier && (
+            <Tooltip title={TIER_DESCRIPTIONS[reference.tier]}>
+              <Chip
+                label={`Tier ${reference.tier}`}
+                size="small"
+                variant="outlined"
+                tabIndex={0}
+                sx={{ height: 18, fontSize: '0.65rem', fontWeight: 600 }}
+              />
+            </Tooltip>
+          )}
+        </>
+      )}
+    </Box>
+  );
+};
+
+const StatusMeter = ({ status }: { status: number | boolean }) => {
+  const theme = useTheme();
+  const value = getStatusValue(status);
+  const bucket = getStatusBucket(status);
+  const colour = getStatusColours(theme.palette.mode)[bucket];
+
+  return (
+    <Box sx={{ minWidth: 120 }}>
+      <Box
+        role="meter"
+        aria-valuemin={-100}
+        aria-valuemax={100}
+        aria-valuenow={value}
+        aria-label="Status"
+        sx={{ height: 8, borderRadius: '4px', backgroundColor: 'action.hover', overflow: 'hidden', mb: 0.5 }}
+      >
+        <Box sx={{ height: '100%', width: `${value < 0 ? 100 : Math.max(value, 0)}%`, backgroundColor: colour, borderRadius: '4px' }} />
+      </Box>
+      <Typography variant="caption" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+        {value < 0 ? 'Failed' : `${value}%`}
+        <Typography component="span" variant="caption" color="text.secondary">
+          {' '}· {getBucketInfo(bucket).label}
+        </Typography>
+      </Typography>
+    </Box>
+  );
+};
+
+const Details = ({ record }: { record: CommitmentRecord }) => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    {record.Notes && (
+      <Box>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>
+          Notes
+        </Typography>
+        <Typography variant="body2">{record.Notes}</Typography>
+      </Box>
+    )}
+    {record.References && (
+      <Box>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>
+          References
+        </Typography>
+        <ReferenceLinks references={record.References} />
+      </Box>
+    )}
+    {!record.References && !record.Notes && (
+      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+        No additional details available
+      </Typography>
+    )}
+  </Box>
+);
+
+interface CommitmentItemProps {
+  record: CommitmentRecord;
+  expanded: boolean;
+  onToggle: (commitment: string) => void;
+}
+
+const CommitmentCard = React.memo(({ record, expanded, onToggle }: CommitmentItemProps) => {
+  const theme = useTheme();
+  const status = getStatusValue(record.Status);
+  const colour = getStatusColours(theme.palette.mode)[getStatusBucket(status)];
+  const categoryIcon = CATEGORY_ICONS[record.Category] || '📋';
+  const pastDue = isPastDue(record);
+
+  return (
+    <Card
+      sx={{
+        height: '100%',
+        borderRadius: 3,
+        borderTop: `4px solid ${colour}`,
+        '@media (prefers-reduced-motion: no-preference)': {
+          transition: 'box-shadow 0.2s, transform 0.2s',
+          '&:hover': { boxShadow: theme.shadows[6], transform: 'translateY(-2px)' },
+        },
+      }}
+    >
+      <CardHeader
+        avatar={
+          <Typography
+            variant="h5"
+            aria-hidden="true"
+            sx={{
+              backgroundColor: theme.palette.action.hover,
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 2,
+            }}
+          >
+            {categoryIcon}
+          </Typography>
+        }
+        title={record.Commitment}
+        titleTypographyProps={{
+          variant: 'subtitle1',
+          component: 'h3',
+          fontWeight: 600,
+          sx: { lineHeight: 1.3 },
+        }}
+        subheader={
+          <Box component="span" sx={{ mt: 0.75, display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            {splitParties(record.Party).map(party => (
+              <PartyChip key={party} party={party} />
+            ))}
+            <Typography component="span" variant="caption" color="text.secondary">
+              • {record.Category}
+            </Typography>
+          </Box>
+        }
+        action={
+          <IconButton
+            onClick={() => onToggle(record.Commitment)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Hide notes and references' : 'Show notes and references'}
+            size="small"
+            sx={{ mt: 1 }}
+          >
+            {expanded ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        }
+        sx={{ pb: 1, alignItems: 'flex-start' }}
+      />
+
+      <CardContent sx={{ pt: 0 }}>
+        <StatusMeter status={record.Status} />
+
+        <Box sx={{ mt: 1.5 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
+            Evidence
+          </Typography>
+          <Evidence record={record} />
+        </Box>
+
+        {record.Due && (
+          <Typography
+            variant="caption"
+            color={pastDue ? 'error' : 'text.secondary'}
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1, fontWeight: pastDue ? 600 : 400 }}
+          >
+            {pastDue && <Warning fontSize="inherit" />}
+            Due {formatDate(record.Due)}{pastDue && ' (past due)'}
+          </Typography>
+        )}
+
+        {record.Tags && record.Tags.length > 0 && (
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+            {record.Tags.map(tag => (
+              <Chip
+                key={tag}
+                label={tag}
+                size="small"
+                variant="outlined"
+                sx={{ height: 22, fontSize: '0.7rem', borderColor: theme.palette.divider }}
+              />
+            ))}
+          </Stack>
+        )}
+
+        <Collapse in={expanded} unmountOnExit>
+          <Divider sx={{ my: 2 }} />
+          <Details record={record} />
+        </Collapse>
+      </CardContent>
+    </Card>
+  );
+});
+
+const CommitmentRow = React.memo(({ record, expanded, onToggle }: CommitmentItemProps) => {
+  const pastDue = isPastDue(record);
+
+  return (
+    <>
+      <TableRow hover sx={{ '& > td': { borderBottom: expanded ? 0 : undefined, verticalAlign: 'top' } }}>
+        <TableCell padding="checkbox" sx={{ pt: 1 }}>
+          <IconButton
+            onClick={() => onToggle(record.Commitment)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Hide notes and references' : 'Show notes and references'}
+            size="small"
+          >
+            {expanded ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.35 }}>
+            {record.Commitment}
+          </Typography>
+          <Box sx={{ mt: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Typography variant="caption" color="text.secondary">
+              {record.Category}
+            </Typography>
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 0.5, flexWrap: 'wrap' }}>
+              {splitParties(record.Party).map(party => (
+                <PartyChip key={party} party={party} />
+              ))}
+            </Box>
+          </Box>
+          <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 1 }}>
+            <StatusMeter status={record.Status} />
+          </Box>
+        </TableCell>
+        <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+          <Stack spacing={0.5} alignItems="flex-start">
+            {splitParties(record.Party).map(party => (
+              <PartyChip key={party} party={party} />
+            ))}
+          </Stack>
+        </TableCell>
+        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+          <StatusMeter status={record.Status} />
+        </TableCell>
+        <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, minWidth: 160 }}>
+          <Evidence record={record} />
+        </TableCell>
+        <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, whiteSpace: 'nowrap' }}>
+          {record.Due && (
+            <Typography
+              variant="caption"
+              color={pastDue ? 'error' : 'text.secondary'}
+              sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: pastDue ? 600 : 400 }}
+            >
+              {pastDue && <Warning fontSize="inherit" titleAccess="Past due" />}
+              {formatDate(record.Due)}
+            </Typography>
+          )}
+        </TableCell>
+      </TableRow>
+      {expanded && (
+        <TableRow>
+          <TableCell />
+          <TableCell colSpan={5} sx={{ pt: 0 }}>
+            <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 1.5 }}>
+              <Evidence record={record} />
+            </Box>
+            <Details record={record} />
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+});
+
+const SORT_OPTIONS: { value: SortField; label: string }[] = [
+  { value: 'Status', label: 'Status' },
+  { value: 'Updated', label: 'Evidence date' },
+  { value: 'Due', label: 'Due date' },
+  { value: 'Category', label: 'Category' },
+  { value: 'Party', label: 'Party' },
+];
+
+const CommitmentsTable = ({ data, filters, onFiltersChange, onClearFilters }: CommitmentsTableProps) => {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedParties, setSelectedParties] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchText, setSearchText] = useState(filters.search);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    setSearchText(filters.search);
+  }, [filters.search]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchText(value);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearch(e.target.value);
+      onFiltersChange({ search: value });
     }, 150);
   };
 
@@ -114,34 +443,16 @@ const CommitmentsTable = ({ data, activeFilter, onClearFilter }: CommitmentsTabl
 
   const parties = useMemo(() => {
     const allParties = new Set<string>();
-    data.forEach(item => {
-      item.Party.split(',').forEach(p => allParties.add(p.trim()));
-    });
+    data.forEach(item => splitParties(item.Party).forEach(p => allParties.add(p)));
     return Array.from(allParties).sort();
   }, [data]);
 
-  const statuses = ['Not Started', 'In Progress', 'Delivered', 'Failed'];
-
-  const dateSortFunction = (a: CommitmentRecord, b: CommitmentRecord) => {
-    const dateA = a[orderBy as keyof CommitmentRecord]
-      ? new Date((a[orderBy as keyof CommitmentRecord] as string).split('/').reverse().join('/'))
-      : null;
-    const dateB = b[orderBy as keyof CommitmentRecord]
-      ? new Date((b[orderBy as keyof CommitmentRecord] as string).split('/').reverse().join('/'))
-      : null;
-
-    if (!dateA && !dateB) return 0;
-    if (!dateA) return 1;
-    if (!dateB) return -1;
-    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
-
-    return order === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
-  };
-
   const filteredData = useMemo(() => {
+    const query = filters.search.toLowerCase();
+    const today = new Date();
+
     return data.filter(item => {
-      if (debouncedSearch) {
-        const query = debouncedSearch.toLowerCase();
+      if (query) {
         const matchesSearch =
           item.Commitment.toLowerCase().includes(query) ||
           item.Category.toLowerCase().includes(query) ||
@@ -150,83 +461,69 @@ const CommitmentsTable = ({ data, activeFilter, onClearFilter }: CommitmentsTabl
         if (!matchesSearch) return false;
       }
 
-      if (selectedCategories.length > 0 && !selectedCategories.includes(item.Category)) {
+      if (filters.categories.length > 0 && !filters.categories.includes(item.Category)) {
         return false;
       }
 
-      const matchesParty = selectedParties.length === 0 ||
-        selectedParties.some((p: string) => item.Party.includes(p));
-      if (!matchesParty) return false;
+      if (filters.parties.length > 0 && !splitParties(item.Party).some(p => filters.parties.includes(p))) {
+        return false;
+      }
 
-      const status = typeof item.Status === 'boolean' ? 0 : item.Status as number;
-      let itemStatus = 'Not Started';
-      if (status === 100) itemStatus = 'Delivered';
-      else if (status > 0 && status < 100) itemStatus = 'In Progress';
-      else if (status < 0) itemStatus = 'Failed';
+      if (filters.statuses.length > 0 && !filters.statuses.includes(getStatusBucket(item.Status))) {
+        return false;
+      }
 
-      if (selectedStatuses.length > 0 && !selectedStatuses.includes(itemStatus)) {
+      if (filters.pastDue && !isPastDue(item, today)) {
         return false;
       }
 
       return true;
     });
-  }, [data, debouncedSearch, selectedCategories, selectedParties, selectedStatuses]);
+  }, [data, filters.search, filters.categories, filters.parties, filters.statuses, filters.pastDue]);
 
   const sortedData = useMemo(() => {
-    return [...filteredData].sort((a, b) => {
-      if (orderBy === 'Due' || orderBy === 'Updated') {
-        return dateSortFunction(a, b);
+    const direction = filters.order === 'asc' ? 1 : -1;
+    const sortValue = (item: CommitmentRecord) => {
+      if (filters.sort === 'Due' || filters.sort === 'Updated') {
+        return parseDate(item[filters.sort])?.getTime() ?? null;
       }
-      const isAsc = order === 'asc';
-      return (isAsc ? 1 : -1) * ((a[orderBy as keyof CommitmentRecord] as any) < (b[orderBy as keyof CommitmentRecord] as any) ? -1 : 1);
+      if (filters.sort === 'Status') return getStatusValue(item.Status);
+      return item[filters.sort];
+    };
+
+    return [...filteredData].sort((a, b) => {
+      const valueA = sortValue(a);
+      const valueB = sortValue(b);
+      if (valueA === valueB) return 0;
+      if (valueA === null) return 1;
+      if (valueB === null) return -1;
+      return direction * (valueA < valueB ? -1 : 1);
     });
-  }, [filteredData, orderBy, order]);
+  }, [filteredData, filters.sort, filters.order]);
 
-  const handleSortChange = (event: any) => {
-    setOrderBy(event.target.value);
-  };
+  const toggleCardExpansion = useCallback((commitment: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(commitment)) {
+        next.delete(commitment);
+      } else {
+        next.add(commitment);
+      }
+      return next;
+    });
+  }, []);
 
-  const handleOrderToggle = () => {
-    setOrder(order === 'asc' ? 'desc' : 'asc');
-  };
-
-  const toggleCardExpansion = (commitment: string) => {
-    const newExpanded = new Set(expandedCards);
-    if (newExpanded.has(commitment)) {
-      newExpanded.delete(commitment);
+  const handleSortHeader = (field: SortField) => {
+    if (filters.sort === field) {
+      onFiltersChange({ order: filters.order === 'asc' ? 'desc' : 'asc' });
     } else {
-      newExpanded.add(commitment);
-    }
-    setExpandedCards(newExpanded);
-  };
-
-  const getStatusColor = (status: number): 'success' | 'error' | 'info' | 'default' => {
-    if (status === 100) return 'success';
-    if (status === 0) return 'default';
-    if (status < 0) return 'error';
-    return 'info';
-  };
-
-  const getProgressValue = (status: number | boolean) => {
-    if (typeof status === 'boolean') return 0;
-    return Math.max(0, status);
-  };
-
-  const isOverdue = (due: string, status: number) => {
-    if (!due || status >= 100) return false;
-    const dueDate = new Date(due.split('/').reverse().join('/'));
-    const today = new Date();
-    return dueDate < today;
-  };
-
-  const getRelativeTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString.split('/').reverse().join('/'));
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch {
-      return dateString;
+      onFiltersChange({ sort: field, order: field === 'Category' || field === 'Party' ? 'asc' : 'desc' });
     }
   };
+
+  const filterCount =
+    filters.statuses.length + filters.parties.length + filters.categories.length + (filters.pastDue ? 1 : 0);
+  const filtersActive = hasActiveFilters(filters);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -237,461 +534,332 @@ const CommitmentsTable = ({ data, activeFilter, onClearFilter }: CommitmentsTabl
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
   };
 
-  const CardComponent = React.memo(({ record }: { record: CommitmentRecord }) => {
-    const status = typeof record.Status === 'boolean' ? 0 : record.Status;
-    const categoryIcon = CATEGORY_ICONS[record.Category] || '📋';
-    const overdue = record.Due && isOverdue(record.Due, status);
+  const chipSx = { height: 26, fontSize: '0.75rem' };
 
-    return (
-      <Card
-        sx={{
-          height: 'fit-content',
-          borderRadius: 3,
-          transition: 'all 0.3s ease-in-out',
-          position: 'relative',
-          overflow: 'visible',
-          '&:hover': {
-            boxShadow: theme.shadows[8],
-            transform: 'translateY(-4px)',
-          },
-          backgroundColor:
-            status === 100 ? theme.palette.success.main + '08' :
-            status < 0 ? theme.palette.error.main + '08' :
-            status > 0 && status < 100 ? theme.palette.info.main + '08' : 'inherit',
-          borderLeft: overdue ? `4px solid ${theme.palette.error.main}` : 'none',
-        }}
+  const sortControls = (
+    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+      <FormControl size="small" sx={{ minWidth: 150 }}>
+        <InputLabel id="sort-by-label">Sort by</InputLabel>
+        <Select
+          labelId="sort-by-label"
+          value={filters.sort}
+          label="Sort by"
+          onChange={(e) => onFiltersChange({ sort: e.target.value as SortField })}
+          sx={{ borderRadius: 2 }}
+        >
+          {SORT_OPTIONS.map(option => (
+            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <ToggleButtonGroup
+        value={filters.order}
+        exclusive
+        onChange={(e, val) => val && onFiltersChange({ order: val })}
+        size="small"
+        aria-label="Sort direction"
       >
-          {overdue && (
-            <Tooltip title="Overdue">
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: -8,
-                  right: 12,
-                  backgroundColor: theme.palette.error.main,
-                  color: theme.palette.error.contrastText,
-                  borderRadius: '50%',
-                  width: 28,
-                  height: 28,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: theme.shadows[2],
-                  zIndex: 1,
-                }}
-              >
-                <Warning fontSize="small" />
-              </Box>
-            </Tooltip>
-          )}
+        <ToggleButton value="asc" aria-label="Ascending">
+          <ArrowUpward fontSize="small" />
+        </ToggleButton>
+        <ToggleButton value="desc" aria-label="Descending">
+          <ArrowDownward fontSize="small" />
+        </ToggleButton>
+      </ToggleButtonGroup>
 
-          <CardHeader
-            avatar={
-              <Typography
-                variant="h5"
-                sx={{
-                  backgroundColor: theme.palette.action.hover,
-                  width: 48,
-                  height: 48,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 2,
-                }}
-              >
-                {categoryIcon}
-              </Typography>
-            }
-            title={record.Commitment}
-            titleTypographyProps={{
-              variant: 'subtitle1',
-              fontWeight: 600,
-              sx: { lineHeight: 1.3 },
-            }}
-            subheader={
-              <Box sx={{ mt: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap', alignItems: 'center' }}>
-                {record.Party.split(',').map((party, idx) => (
-                  <Chip
-                    key={idx}
-                    label={party.trim()}
-                    size="small"
-                    color={getPartyColor(party.trim(), theme)}
-                    variant="filled"
-                    sx={{ height: 20, fontSize: '0.7rem' }}
-                  />
-                ))}
-                <Typography variant="caption" color="text.secondary">
-                  • {record.Category}
-                </Typography>
-              </Box>
-            }
-            action={
-              <IconButton
-                onClick={() => toggleCardExpansion(record.Commitment)}
-                aria-expanded={expandedCards.has(record.Commitment)}
-                aria-label="show more"
+      <ToggleButtonGroup
+        value={filters.view}
+        exclusive
+        onChange={(e, val) => val && onFiltersChange({ view: val })}
+        size="small"
+        aria-label="Layout"
+      >
+        <ToggleButton value="table" aria-label="Table view">
+          <TableRows fontSize="small" />
+        </ToggleButton>
+        <ToggleButton value="grid" aria-label="Card view">
+          <ViewModule fontSize="small" />
+        </ToggleButton>
+      </ToggleButtonGroup>
+    </Box>
+  );
+
+  const filterGroups = (
+    <Grid container spacing={2}>
+      <Grid item xs={12} md={5}>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+          Categories
+        </Typography>
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+          {categories.map(category => {
+            const selected = filters.categories.includes(category);
+            return (
+              <Chip
+                key={category}
+                label={category}
                 size="small"
-                sx={{ mt: 1 }}
-              >
-                {expandedCards.has(record.Commitment) ? <ExpandLess /> : <ExpandMore />}
-              </IconButton>
-            }
-            sx={{ pb: 1, pt: 2 }}
-          />
+                aria-pressed={selected}
+                onClick={() => onFiltersChange({ categories: toggleValue(filters.categories, category) })}
+                color={selected ? 'primary' : 'default'}
+                variant={selected ? 'filled' : 'outlined'}
+                sx={chipSx}
+              />
+            );
+          })}
+        </Stack>
+      </Grid>
 
-          <CardContent sx={{ pt: 0 }}>
-            <Box sx={{ mb: 2 }}>
-              <LinearProgress
-                variant="determinate"
-                value={getProgressValue(status)}
-                color={status === 100 ? 'success' : status < 0 ? 'error' : 'info'}
+      <Grid item xs={12} md={2}>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+          Parties
+        </Typography>
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+          {parties.map(party => (
+            <PartyChip
+              key={party}
+              party={party}
+              size="filter"
+              selected={filters.parties.includes(party)}
+              onClick={() => onFiltersChange({ parties: toggleValue(filters.parties, party) })}
+            />
+          ))}
+        </Stack>
+      </Grid>
+
+      <Grid item xs={12} md={5}>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+          Status
+        </Typography>
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+          {STATUS_BUCKETS.map(bucket => {
+            const selected = filters.statuses.includes(bucket.key);
+            const colour = getStatusColours(theme.palette.mode)[bucket.key];
+            return (
+              <Chip
+                key={bucket.key}
+                label={bucket.label}
+                size="small"
+                aria-pressed={selected}
+                onClick={() => onFiltersChange({ statuses: toggleValue(filters.statuses, bucket.key) })}
+                variant={selected ? 'filled' : 'outlined'}
+                icon={<Box component="span" sx={{ width: 10, height: 10, borderRadius: '2px', backgroundColor: colour, ml: '6px !important' }} />}
                 sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: theme.palette.action.hover,
-                  mb: 1,
+                  ...chipSx,
+                  ...(selected && { backgroundColor: theme.palette.action.selected }),
+                  borderColor: selected ? colour : undefined,
                 }}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Chip
-                  label={`${status}%`}
-                  color={getStatusColor(status)}
-                  size="small"
-                  sx={{ fontWeight: 600, minWidth: 60 }}
-                />
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <AccessTime fontSize="small" color="disabled" />
-                  <Tooltip title={record.Updated}>
-                    <Typography variant="caption" color="text.secondary">
-                      {getRelativeTime(record.Updated)}
-                    </Typography>
-                  </Tooltip>
-                </Box>
-              </Box>
-            </Box>
-
-            {record.Due && (
-              <Box sx={{ mb: 1.5 }}>
-                <Typography variant="caption" color={overdue ? 'error' : 'text.secondary'} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  Due: {record.Due}
-                  {overdue && <Warning fontSize="inherit" />}
-                </Typography>
-              </Box>
-            )}
-
-            {record.Tags && record.Tags.length > 0 && (
-              <Box sx={{ mb: 1.5 }}>
-                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                  {record.Tags.map((tag, tagIndex) => (
-                    <Chip
-                      key={tagIndex}
-                      label={tag}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        height: 22,
-                        fontSize: '0.7rem',
-                        borderColor: theme.palette.divider,
-                      }}
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            )}
-
-            <Collapse in={expandedCards.has(record.Commitment)}>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {record.References && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>
-                      References:
-                    </Typography>
-                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                      {record.References}
-                    </Typography>
-                  </Box>
-                )}
-                {record.Notes && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>
-                      Notes:
-                    </Typography>
-                    <Typography variant="body2">{record.Notes}</Typography>
-                  </Box>
-                )}
-                {!record.References && !record.Notes && (
-                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                    No additional details available
-                  </Typography>
-                )}
-              </Box>
-            </Collapse>
-          </CardContent>
-        </Card>
-    );
-  });
+            );
+          })}
+          <Chip
+            label="Past due"
+            size="small"
+            aria-pressed={filters.pastDue}
+            onClick={() => onFiltersChange({ pastDue: !filters.pastDue })}
+            icon={<Warning sx={{ fontSize: '14px !important' }} />}
+            color={filters.pastDue ? 'error' : 'default'}
+            variant={filters.pastDue ? 'filled' : 'outlined'}
+            sx={chipSx}
+          />
+        </Stack>
+      </Grid>
+    </Grid>
+  );
 
   return (
-    <Box sx={{ p: 2 }}>
-      {activeFilter && (
-        <Alert
-          severity="info"
-          action={
-            <Chip
-              label="Clear Filter"
-              onDelete={onClearFilter}
-              color="primary"
-              variant="filled"
-              size="small"
-              onClick={onClearFilter}
-            />
-          }
-          sx={{ mb: 3, borderRadius: 2 }}
-        >
-          Showing {activeFilter} commitments only
-        </Alert>
-      )}
+    <Box component="section" aria-labelledby="commitments-heading" id="commitments" sx={{ scrollMarginTop: 72 }}>
+      <Typography id="commitments-heading" variant="h5" component="h2" sx={{ fontWeight: 700, mb: 2 }}>
+        Commitments
+      </Typography>
 
       <Paper
+        elevation={2}
         sx={{
-          p: 2.5,
-          borderRadius: 3,
-          mb: 3,
           position: 'sticky',
-          top: 80,
-          zIndex: 100,
-          background: (theme) =>
-            `rgba(${theme.palette.mode === 'light' ? '255, 255, 255' : '30, 30, 30'}, 0.95)`,
-          backdropFilter: 'blur(10px)',
-          border: (theme) => `1px solid ${theme.palette.divider}`,
+          top: { xs: 56, sm: 64 },
+          zIndex: theme.zIndex.appBar - 1,
+          p: 1.5,
+          mb: 2,
+          borderRadius: 3,
+          border: 1,
+          borderColor: 'divider',
         }}
-        elevation={1}
       >
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FilterList fontSize="small" />
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <TextField
+            size="small"
+            placeholder="Search commitments and notes…"
+            value={searchText}
+            onChange={handleSearchChange}
+            inputProps={{ 'aria-label': 'Search commitments' }}
+            InputProps={{
+              startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+            }}
+            sx={{ flex: '1 1 0', minWidth: 0, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+          />
+
+          {isDesktop && sortControls}
+
+          <Badge badgeContent={filterCount} color="primary" sx={{ flexShrink: 0, mr: filterCount ? 0.5 : 0 }}>
+            <Button
+              variant={isDesktop && filtersOpen ? 'contained' : 'outlined'}
+              startIcon={<FilterList />}
+              onClick={() => (isDesktop ? setFiltersOpen(!filtersOpen) : setDrawerOpen(true))}
+              aria-expanded={isDesktop ? filtersOpen : drawerOpen}
+              aria-controls={isDesktop ? 'filter-panel' : 'filter-drawer'}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
               Filters
-            </Typography>
-          </Grid>
+            </Button>
+          </Badge>
+        </Box>
 
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Search commitments..."
-              inputRef={searchInputRef}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                },
-              }}
-            />
-          </Grid>
+        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1, minHeight: 30 }}>
+          <Typography variant="body2" color="text.secondary" role="status">
+            {sortedData.length} of {data.length} commitments
+          </Typography>
+          {filtersActive && (
+            <Button size="small" onClick={onClearFilters}>
+              Clear filters
+            </Button>
+          )}
+        </Box>
 
-          <Grid item xs={12} md={5}>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>Sort By</InputLabel>
-                <Select
-                  value={orderBy}
-                  label="Sort By"
-                  onChange={handleSortChange}
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem value="Category">Category</MenuItem>
-                  <MenuItem value="Party">Party</MenuItem>
-                  <MenuItem value="Status">Status</MenuItem>
-                  <MenuItem value="Updated">Updated</MenuItem>
-                  <MenuItem value="Due">Due</MenuItem>
-                </Select>
-              </FormControl>
-
-              <ToggleButtonGroup
-                value={order}
-                exclusive
-                onChange={handleOrderToggle}
-                size="small"
-              >
-                <ToggleButton value="asc" sx={{ borderRadius: '8px 0 0 8px !important' }}>
-                  <ArrowUpward fontSize="small" />
-                </ToggleButton>
-                <ToggleButton value="desc" sx={{ borderRadius: '0 8px 8px 0 !important' }}>
-                  <ArrowDownward fontSize="small" />
-                </ToggleButton>
-              </ToggleButtonGroup>
-
-              <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
-                <ToggleButtonGroup value={viewMode} exclusive onChange={(e, val) => val && setViewMode(val)} size="small">
-                  <ToggleButton value="grid">
-                    <ViewModule fontSize="small" />
-                  </ToggleButton>
-                  <ToggleButton value="list">
-                    <ViewList fontSize="small" />
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-
-        <Grid container spacing={2} sx={{ mt: 2 }}>
-          <Grid item xs={12} md={4}>
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
-                Categories
-              </Typography>
-              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                {categories.map(category => (
-                  <Chip
-                    key={category}
-                    label={category}
-                    size="small"
-                    onClick={() => {
-                      startTransition(() => {
-                        if (selectedCategories.includes(category)) {
-                          setSelectedCategories(prev => prev.filter(c => c !== category));
-                        } else {
-                          setSelectedCategories(prev => [...prev, category]);
-                        }
-                      });
-                    }}
-                    color={selectedCategories.includes(category) ? 'primary' : 'default'}
-                    variant={selectedCategories.includes(category) ? 'filled' : 'outlined'}
-                    sx={{
-                      height: 26,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
-                Parties
-              </Typography>
-              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                {parties.map(party => (
-                  <Chip
-                    key={party}
-                    label={party}
-                    size="small"
-                    onClick={() => {
-                      startTransition(() => {
-                        if (selectedParties.includes(party)) {
-                          setSelectedParties(prev => prev.filter(p => p !== party));
-                        } else {
-                          setSelectedParties(prev => [...prev, party]);
-                        }
-                      });
-                    }}
-                    color={selectedParties.includes(party) ? 'primary' : getPartyColor(party, theme)}
-                    variant={selectedParties.includes(party) ? 'filled' : 'outlined'}
-                    sx={{
-                      height: 26,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
-                Status
-              </Typography>
-              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                {statuses.map(status => (
-                  <Chip
-                    key={status}
-                    label={status}
-                    size="small"
-                    onClick={() => {
-                      startTransition(() => {
-                        if (selectedStatuses.includes(status)) {
-                          setSelectedStatuses(prev => prev.filter(s => s !== status));
-                        } else {
-                          setSelectedStatuses(prev => [...prev, status]);
-                        }
-                      });
-                    }}
-                    color={
-                      status === 'Delivered' ? 'success' :
-                      status === 'Failed' ? 'error' :
-                      status === 'In Progress' ? 'info' : 'default'
-                    }
-                    variant={selectedStatuses.includes(status) ? 'filled' : 'outlined'}
-                    sx={{
-                      height: 26,
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Grid>
-        </Grid>
       </Paper>
+
+      {isDesktop && (
+        <Collapse in={filtersOpen} id="filter-panel">
+          <Paper sx={{ p: 2, mb: 2, borderRadius: 3, border: 1, borderColor: 'divider' }}>
+            {filterGroups}
+          </Paper>
+        </Collapse>
+      )}
+
+      <Drawer
+        anchor="bottom"
+        open={!isDesktop && drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        PaperProps={{ id: 'filter-drawer', sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '85vh' } }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" component="h2">Filter and sort</Typography>
+            <IconButton onClick={() => setDrawerOpen(false)} aria-label="Close filters">
+              <Close />
+            </IconButton>
+          </Box>
+          {sortControls}
+          <Divider sx={{ my: 2 }} />
+          {filterGroups}
+          <Box sx={{ display: 'flex', gap: 1, mt: 3, position: 'sticky', bottom: 0 }}>
+            <Button onClick={onClearFilters} disabled={!filtersActive}>
+              Clear filters
+            </Button>
+            <Button variant="contained" onClick={() => setDrawerOpen(false)} sx={{ ml: 'auto' }}>
+              Show {sortedData.length} commitments
+            </Button>
+          </Box>
+        </Box>
+      </Drawer>
 
       {sortedData.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h6" color="text.secondary">
             No commitments match your filters
           </Typography>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              setDebouncedSearch('');
-              if (searchInputRef.current) {
-                searchInputRef.current.value = '';
-              }
-              setSelectedCategories([]);
-              setSelectedParties([]);
-              setSelectedStatuses([]);
-            }}
-            sx={{ mt: 2 }}
-          >
-            Clear All Filters
+          <Button variant="outlined" onClick={onClearFilters} sx={{ mt: 2 }}>
+            Clear filters
           </Button>
         </Box>
+      ) : filters.view === 'table' ? (
+        <TableContainer component={Paper} sx={{ borderRadius: 3, border: 1, borderColor: 'divider' }}>
+          <Table size="small" aria-labelledby="commitments-heading">
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Box component="span" sx={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>
+                    Details
+                  </Box>
+                </TableCell>
+                <TableCell sortDirection={filters.sort === 'Category' ? filters.order : false}>
+                  <TableSortLabel
+                    active={filters.sort === 'Category'}
+                    direction={filters.sort === 'Category' ? filters.order : 'asc'}
+                    onClick={() => handleSortHeader('Category')}
+                  >
+                    Commitment
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }} sortDirection={filters.sort === 'Party' ? filters.order : false}>
+                  <TableSortLabel
+                    active={filters.sort === 'Party'}
+                    direction={filters.sort === 'Party' ? filters.order : 'asc'}
+                    onClick={() => handleSortHeader('Party')}
+                  >
+                    Party
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} sortDirection={filters.sort === 'Status' ? filters.order : false}>
+                  <TableSortLabel
+                    active={filters.sort === 'Status'}
+                    direction={filters.sort === 'Status' ? filters.order : 'desc'}
+                    onClick={() => handleSortHeader('Status')}
+                  >
+                    Status
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }} sortDirection={filters.sort === 'Updated' ? filters.order : false}>
+                  <TableSortLabel
+                    active={filters.sort === 'Updated'}
+                    direction={filters.sort === 'Updated' ? filters.order : 'desc'}
+                    onClick={() => handleSortHeader('Updated')}
+                  >
+                    Evidence
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }} sortDirection={filters.sort === 'Due' ? filters.order : false}>
+                  <TableSortLabel
+                    active={filters.sort === 'Due'}
+                    direction={filters.sort === 'Due' ? filters.order : 'desc'}
+                    onClick={() => handleSortHeader('Due')}
+                  >
+                    Due
+                  </TableSortLabel>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortedData.map(record => (
+                <CommitmentRow
+                  key={`${record.Commitment}-${record.Party}-${record.Category}`}
+                  record={record}
+                  expanded={expandedCards.has(record.Commitment)}
+                  onToggle={toggleCardExpansion}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       ) : (
-        <Grid container spacing={3}>
-          {sortedData.map((record, index) => (
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
+          {sortedData.map(record => (
             <Grid
               item
               xs={12}
-              sm={viewMode === 'list' ? 12 : 6}
-              md={viewMode === 'list' ? 12 : 6}
-              lg={viewMode === 'list' ? 12 : 4}
-              xl={viewMode === 'list' ? 12 : 3}
+              sm={6}
+              lg={4}
+              xl={3}
               key={`${record.Commitment}-${record.Party}-${record.Category}`}
             >
-              <CardComponent record={record} />
+              <CommitmentCard
+                record={record}
+                expanded={expandedCards.has(record.Commitment)}
+                onToggle={toggleCardExpansion}
+              />
             </Grid>
           ))}
         </Grid>
@@ -701,6 +869,7 @@ const CommitmentsTable = ({ data, activeFilter, onClearFilter }: CommitmentsTabl
         <Zoom in={showScrollTop}>
           <IconButton
             onClick={scrollToTop}
+            aria-label="Back to top"
             sx={{
               position: 'fixed',
               bottom: 24,
@@ -711,7 +880,6 @@ const CommitmentsTable = ({ data, activeFilter, onClearFilter }: CommitmentsTabl
               color: 'primary.contrastText',
               '&:hover': {
                 bgcolor: 'primary.dark',
-                transform: 'scale(1.1)',
               },
               boxShadow: theme.shadows[6],
               zIndex: 1000,

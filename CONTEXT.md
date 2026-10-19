@@ -16,6 +16,10 @@ _Avoid_: Promise, pledge (used colloquially in the README and the upstream Googl
 A numeric editorial score indicating how much concrete public action has been taken toward delivering a commitment. Score is 0-100, with negative values indicating failure or abandonment. Empty string means not yet started. Allowed values: `0`/empty, `10` (default in-progress anchor), any 10-multiple in [10, 100] when the AI can defend the value, k-fractions `25`/`33`/`67`/`75` when the commitment has a clear k-step structure, and `-100` (the only negative value) for failure. No decimals. Notes must justify any non-anchor value.
 _Avoid_: Progress (implies a continuous journey rather than an editorial judgement)
 
+**Status group**:
+The UI's grouping of Status values for filtering and charts: Delivered (`100`), Well Advanced (`50`–`90`, including `67` and `75`), Early Progress (`10`–`40`, including `25` and `33`), Not Started (`0`/empty), and Failed (`-100`). A presentation grouping only; the CSV stores the numeric Status.
+_Avoid_: In progress as a single bucket (hides how far along a commitment is)
+
 **Failure**:
 A commitment is "failed" when it was explicitly dropped, a binary deliverable was replaced with the opposite policy, or a time-bound one-off deliverable can no longer happen. Delay (including "next term") is not failure, and a past-due row with no action is only a candidate for failure: the flip to `-100` is a human decision. All failures are marked Status `-100`. A failure row must cite a source in `References` documenting the failure or abandonment.
 _Avoid_: Partial failure (a commitment that delivered some of its sub-parts is a positive fraction, not a negative score)
