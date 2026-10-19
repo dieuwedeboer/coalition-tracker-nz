@@ -18,13 +18,15 @@ Every example follows the same pattern:
 
 **Decision**: The literal deliverable appears to be met, but an earlier human review held the row at `20`. The run kept `20` and flagged it for review: "do not casually flip to 100 on the narrow wording, and do not flip to -100 because the bill is deferred, not repealed."
 
-**Lesson**: A narrow verb can mean 100 even when the policy as a whole stalls. When the literal reading and an earlier human decision disagree, raise it as a note. Don't override the human decision silently.
+**Outcome**: On review on 19/10/2026, Dieuwe moved the row to `100`: the literal deliverable was met.
+
+**Lesson**: A narrow verb can mean 100 even when the policy as a whole stalls. Literal delivery counts, so a late or defeated bill can still meet a "support to select committee" or "first reading" commitment. When the literal reading and an earlier human decision disagree, raise it as a note. Don't override the human decision silently.
 
 ## 2. Delayed is not failed
 
 **Commitment**: "Repeal the Canterbury Regional Council (Ngāi Tahu Representation) Act 2022." Current Status `10`. [2026-08-15]
 
-**Evidence**: The NZ Herald (21/07/2026) reported that the Local Government Minister conceded the repeal "will have to wait until next term". The Act remains in force.
+**Evidence**: The 2026-08-15 run cited an NZ Herald report (21/07/2026) that the Local Government Minister conceded the repeal "will have to wait until next term". The 2026-10-19 run could not find that report again, so treat it as unverified. The Act remains in force.
 
 **Decision**: Keep `10`, plus a note: "Not auto-flipped to -100; delayed, not abandoned. Human call whether to keep 10 or move to -100."
 
