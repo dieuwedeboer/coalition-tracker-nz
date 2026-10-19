@@ -20,7 +20,7 @@ import ElectionRibbon from './components/ElectionRibbon';
 import Header from './components/Header';
 import SummaryChart, { DeliveryTimeline } from './components/SummaryChart';
 import CommitmentsTable from './components/CommitmentsTable';
-import { CategoryBreakdown, DueDates, PartyBreakdown } from './components/DetailCharts';
+import { CategoryBreakdown, PartyBreakdown } from './components/DetailCharts';
 import Footer from './components/Footer';
 import { CommitmentRecord } from './types';
 import { fetchCommitmentData } from './services/csvDataService';
@@ -221,7 +221,6 @@ const App = () => {
                     selected={filters.parties}
                     onSelect={(party) => selectAndShow({ parties: toggleValue(filters.parties, party) }, !filters.parties.includes(party))}
                   />
-                  <DueDates data={data} onShowPastDue={() => selectAndShow({ pastDue: true }, true)} />
                 </Stack>
               </Grid>
             </Grid>

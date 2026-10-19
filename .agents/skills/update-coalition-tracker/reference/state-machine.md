@@ -32,6 +32,22 @@ Before you look at the evidence, write down what 100% means for this particular 
 | Maintain / keep / not progress / not proceed with | Nothing has changed, so the commitment is met. It counts as `100` from the date the Government took office (27/11/2023) or the date of the coalition agreement, unless the Government reverses course. |
 | Continuous outcome ("lower inflation", "reduce waiting times") | The stated target has been reached and held, according to official data. Score progress in proportion to how close the measures are to the target. |
 
+## Delivered with changes
+
+Score `100` when the commitment's core aim is in force or operating, even if the Government changed a detail of the wording (ADR 0003). The test for each difference between the wording and what was delivered:
+
+| The difference is… | Score |
+|---|---|
+| A deliberate, public choice: a different mechanism, a narrower scope, a skipped interim step, or a limb replaced by an alternative | Counts as delivered. `100` if the core aim is in force or operating. |
+| A step not yet finished: bill not passed, regulations not drafted, Act not yet in force | Progress. Keep a fraction. |
+| A "consider" limb with no record of being considered, when the substantive limbs are delivered | Counts as delivered. Say in `Notes` that no record was found. |
+| A substantial limb dropped with nothing in its place | Keep a positive fraction. |
+| A reversal of the commitment's aim | See *Failure definition*. |
+
+A `100` scored this way must have `Notes` starting "As at DD/MM/YYYY: Delivered with changes." and naming each change in one short sentence, starting "Change:" (a different choice) or "Compromise:" (a narrower or weaker version). Set `Updated` to the date the last delivered part came into force or began operating.
+
+Example: the Smokefree repeal commitment. All three repeal limbs and the vaping changes are in force; tax was not limited to smoked products, and heated tobacco excise was halved instead. That is `100`, delivered with changes.
+
 ## Failure definition
 
 A commitment has **failed** (`-100`) only when one of these is documented by a source:

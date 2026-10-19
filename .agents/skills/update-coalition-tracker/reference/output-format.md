@@ -75,6 +75,7 @@ The bracketed values are placeholders. Every row heading quotes the start of the
   - conflicting primary records;
   - a budget that ran out;
   - a narrow-wording call the user may dispute;
-  - a prior `100` with one limb still unfinished.
+  - a prior `100` with one limb still unfinished;
+  - a new `100` scored as delivered with changes (name the changes).
 - **Each entry should take about 30 seconds to review.** Reasoning is 2–3 sentences, with one URL.
 - **Don't add confidence scores.** Hedged reasoning shows uncertainty on its own.

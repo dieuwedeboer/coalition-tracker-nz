@@ -20,6 +20,10 @@ _Avoid_: Progress (implies a continuous journey rather than an editorial judgeme
 The UI's grouping of Status values for filtering and charts: Delivered (`100`), Well Advanced (`50`–`90`, including `67` and `75`), Early Progress (`10`–`40`, including `25` and `33`), Not Started (`0`/empty), and Failed (`-100`). A presentation grouping only; the CSV stores the numeric Status.
 _Avoid_: In progress as a single bucket (hides how far along a commitment is)
 
+**Delivered with changes**:
+A commitment whose core aim is in force or operating, where the Government deliberately changed a detail of the wording (mechanism, scope, an interim step, or one limb swapped for an alternative). It scores `100`, and `Notes` must say "Delivered with changes" and name each change (ADR 0003). A limb that is still pending is progress, not a change.
+_Avoid_: Partially delivered (implies more is still to come)
+
 **Failure**:
 A commitment is "failed" when it was explicitly dropped, a binary deliverable was replaced with the opposite policy, or a time-bound one-off deliverable can no longer happen. Delay (including "next term") is not failure, and a past-due row with no action is only a candidate for failure: the flip to `-100` is a human decision. All failures are marked Status `-100`. A failure row must cite a source in `References` documenting the failure or abandonment.
 _Avoid_: Partial failure (a commitment that delivered some of its sub-parts is a positive fraction, not a negative score)
